@@ -258,72 +258,90 @@
                 <button onclick="toggleSidebar()" class="text-xl hover:text-red-500 transition-colors accent-text anim-menu-icon"><i class="fas fa-bars"></i></button>
                 <h1 class="text-xl font-black tracking-widest accent-text italic">NOVA WALLET</h1>
                 <div class="flex items-center gap-4 font-bold">
-                    <button id="top-tg-btn" onclick="window.open('https://t.me/NovaPayAlertBot', '_blank')" class="accent-text text-2xl hover:scale-110 transition-transform cursor-pointer anim-nav-tg"><i class="fab fa-telegram"></i></button>
+                    <button onclick="alert('Coming soon')" class="accent-text text-2xl hover:scale-110 transition-transform cursor-pointer anim-nav-tg"><i class="fab fa-telegram"></i></button>
                     <div class="w-9 h-9 rounded-full accent-bg text-white flex items-center justify-center font-bold border-2 accent-border cursor-pointer overflow-hidden animate-pulse" id="ui-user-initial">U</div>
                 </div>
             </header>
 
             <div class="p-4">
-                <div id="home-main-card" class="rounded-3xl p-6 shadow-2xl relative overflow-hidden transform hover:scale-[1.02] transition-all duration-300 text-white border border-white/10 flex flex-col justify-between min-h-[220px]">
-                    <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.06),transparent_60%)] pointer-events-none"></div>
-                    
-                    <div class="flex justify-between items-start relative z-10 w-full mb-2">
-                        <div class="flex flex-col">
-                            <span class="text-[10px] font-black tracking-[0.25em] text-white/95">NOVA WALLET</span>
-                            <span class="text-[8px] font-bold tracking-widest text-white/90 uppercase italic">SECURE PAYMENTS</span>
+                <div id="home-main-card" class="rounded-3xl p-6 relative overflow-hidden transform hover:scale-[1.02] transition-all duration-300 mb-4">
+                    <div class="flex justify-between items-start mb-4 relative z-10 w-full">
+                        <div class="flex items-center gap-2 text-white/90">
+                            <i class="fas fa-wallet"></i>
+                            <span class="text-xs font-black tracking-widest uppercase">AVAILABLE BALANCE</span>
                         </div>
-                        <span id="ui-verified-badge" class="bg-white/10 backdrop-blur-md text-white text-[9px] font-bold px-3 py-1 rounded-full flex items-center gap-1 border border-white/20 shadow-sm"><i class="fas fa-shield-alt"></i> Verified</span>
+                        <span id="ui-verified-badge" class="bg-white/20 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-1 border border-white/30"><i class="fas fa-shield-alt"></i> Verified</span>
                     </div>
 
-                    <div class="flex items-center gap-4 relative z-10 my-3 animate-pulse">
-                        <i class="fas fa-wifi text-base text-white/40 rotate-90"></i>
+                    <div class="flex items-center gap-1 mb-6 relative z-10">
+                        <span class="text-2xl font-bold">₹</span>
+                        <h3 class="text-5xl font-black tracking-tight global-balance transition-all duration-300">0.00</h3>
+                        <i class="fas fa-eye-slash text-white/60 ml-2 text-lg cursor-pointer hover:text-white transition-all" id="eye-balance" onclick="toggleBalanceVisibility()"></i>
                     </div>
 
-                    <div class="relative z-10 mb-2">
-                        <p class="text-[9px] text-white/90 uppercase tracking-widest font-bold mb-0.5">Available Balance</p>
-                        <div class="flex items-baseline gap-0.5">
-                            <span class="text-lg font-medium text-white/90">₹</span>
-                            <h3 class="text-4xl font-black tracking-tight flex items-center gap-2 text-white">
-                                <span class="global-balance transition-all duration-300">0.00</span>
-                                <i class="fas fa-eye-slash text-base cursor-pointer opacity-70 hover:opacity-100 hidden transition-all" id="eye-balance" onclick="toggleBalanceVisibility()"></i>
-                            </h3>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-between items-end relative z-10 pt-2 border-t border-white/5 w-full">
-                        <div class="flex flex-col">
-                            <span class="text-[8px] uppercase tracking-wider text-white/90 mb-0.5">Card Holder</span>
-                            <h2 class="text-xs font-black tracking-wide" id="ui-user-name">User Name</h2>
-                        </div>
-                        <div class="text-right flex flex-col items-end">
-                            <span class="text-[8px] uppercase tracking-wider text-white/90 mb-0.5">Wallet ID</span>
-                            <div class="flex items-center gap-1.5">
-                                <p class="text-[10px] font-mono tracking-widest text-white/90 font-bold" id="ui-user-phone">Phone</p>
-                                <i class="fas fa-pencil-alt text-[10px] text-white/90 cursor-pointer hover:text-white anim-edit-icon" onclick="openCustomIdModal()" title="Edit Custom ID"></i>
+                    <div class="grid grid-cols-2 gap-3 relative z-10">
+                        <div class="bal-inner-box flex flex-col gap-1">
+                            <span class="text-[9px] uppercase tracking-wider text-white/70 font-bold">PHONE</span>
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-phone text-[10px] text-white/80"></i>
+                                <span class="text-xs font-bold font-mono truncate" id="ui-user-phone">Phone</span>
                             </div>
                         </div>
+                        <div class="bal-inner-box flex flex-col gap-1">
+                            <span class="text-[9px] uppercase tracking-wider text-white/70 font-bold">MEMBER NAME</span>
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-user text-[10px] text-white/80"></i>
+                                <span class="text-xs font-bold truncate" id="ui-user-name">User Name</span>
+                            </div>
+                        </div>
+                        <div class="bal-inner-box flex flex-col gap-1">
+                            <span class="text-[9px] uppercase tracking-wider text-white/70 font-bold">ACCOUNT</span>
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-shield-check text-[10px] text-white/80"></i>
+                                <span class="text-xs font-bold">Verified</span>
+                            </div>
+                        </div>
+                        <div class="bal-inner-box flex flex-col gap-1 relative group">
+                            <span class="text-[9px] uppercase tracking-wider text-white/70 font-bold">CUSTOM ID</span>
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-id-badge text-[10px] text-white/80"></i>
+                                <span class="text-xs font-bold font-mono truncate" id="ui-user-custom">Not Set</span>
+                            </div>
+                            <i class="fas fa-pencil-alt text-[10px] absolute right-2 top-2 text-white/50 cursor-pointer hover:text-white anim-edit-icon" onclick="openCustomIdModal()"></i>
+                        </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3 mt-4 font-bold">
-                    <div class="theme-card p-4 rounded-2xl border border-gray-100 shadow-sm">
-                        <div class="text-[10px] font-black tracking-wider text-gray-400">TOTAL CREDIT</div>
-                        <div id="home-stats-credit" class="text-lg font-black text-green-500">₹0.00</div>
+                <div class="grid grid-cols-2 gap-4 mt-6 mb-6">
+                    <div class="stat-square cursor-pointer" onclick="handleSecretDeleteHistoryTap()">
+                        <div class="stat-icon-wrapper"><i class="fas fa-arrow-trend-up"></i></div>
+                        <div>
+                            <div id="home-stats-credit" class="text-xl font-black text-white mb-1 tracking-tight">₹0.00</div>
+                            <div class="text-[10px] font-bold tracking-widest text-gray-500 uppercase">Total Credit</div>
+                        </div>
                     </div>
-                    <div class="theme-card p-4 rounded-2xl border border-gray-100 shadow-sm">
-                        <div class="text-[10px] font-black tracking-wider text-gray-400">TOTAL DEBIT</div>
-                        <div id="home-stats-debit" class="text-lg font-black text-red-500">₹0.00</div>
+                    <div class="stat-square">
+                        <div class="stat-icon-wrapper"><i class="fas fa-check-circle"></i></div>
+                        <div>
+                            <div id="home-stats-count" class="text-xl font-black text-white mb-1 tracking-tight">0</div>
+                            <div class="text-[10px] font-bold tracking-widest text-gray-500 uppercase">Successful</div>
+                        </div>
                     </div>
-                    <div class="theme-card p-4 rounded-2xl border border-gray-100 shadow-sm">
-                        <div class="text-[10px] font-black tracking-wider text-gray-400 uppercase">Total No of TXN</div>
-                        <div id="home-stats-count" class="text-lg font-black text-blue-500">0</div>
+                    <div class="stat-square">
+                        <div class="stat-icon-wrapper"><i class="fas fa-receipt"></i></div>
+                        <div>
+                            <div id="home-stats-count-total" class="text-xl font-black text-white mb-1 tracking-tight">0</div>
+                            <div class="text-[10px] font-bold tracking-widest text-gray-500 uppercase">Total Txns</div>
+                        </div>
                     </div>
-                    <div class="theme-card p-4 rounded-2xl border border-gray-100 shadow-sm">
-                        <div class="text-[10px] font-black tracking-wider text-gray-400">SUCCESS RATE</div>
-                        <div id="home-stats-rate" class="text-lg font-black text-amber-500">100%</div>
+                    <div class="stat-square">
+                        <div class="stat-icon-wrapper"><i class="fas fa-percent"></i></div>
+                        <div>
+                            <div id="home-stats-rate" class="text-xl font-black text-white mb-1 tracking-tight">100%</div>
+                            <div class="text-[10px] font-bold tracking-widest text-gray-500 uppercase">Success Rate</div>
+                        </div>
                     </div>
                 </div>
-                <button onclick="showView('game')" class="w-full mt-3 btn-animate accent-bg text-white font-black py-3 rounded-xl shadow-md text-xs tracking-wide">VIEW DETAILED STATS</button>
             </div>
 
             <div class="theme-card rounded-3xl pt-4 px-4 pb-4 shadow-sm mt-2 border border-gray-100 mx-4 mb-4">
@@ -336,18 +354,14 @@
                     <button onclick="showView('lifafa')" class="col-lifafa anim-lifafa btn-animate flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-full bg-gray-50 theme-card flex items-center justify-center text-xl shadow-md border border-gray-100 color-lifafa hover:shadow-lg transition-all"><i class="fas fa-envelope-open-text"></i></div><span class="text-[10px] font-bold text-gray-600">Lifafa</span></button>
                     <button onclick="showView('gift')" class="col-gift anim-gift btn-animate flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-full bg-gray-50 theme-card flex items-center justify-center text-xl shadow-md border border-gray-100 color-gift hover:shadow-lg transition-all"><i class="fas fa-gift"></i></div><span class="text-[10px] font-bold text-gray-600">Gift Code</span></button>
                     <button onclick="showView('api')" class="col-api anim-api btn-animate flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-full bg-gray-50 theme-card flex items-center justify-center text-xl shadow-md border border-gray-100 color-api hover:shadow-lg transition-all"><i class="fas fa-code"></i></div><span class="text-[10px] font-bold text-gray-600">API Keys</span></button>
-                    <button onclick="showView('txn')" class="col-txn anim-txn btn-animate flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-full bg-gray-50 theme-card flex items-center justify-center text-xl shadow-md border border-gray-100 color-txn hover:shadow-lg transition-all"><i class="fas fa-search-dollar"></i></div><span class="text-[10px] font-bold text-gray-600">TXN Find</span></button>
-                    
-                    <button onclick="showView('botalert')" class="col-bot anim-bot btn-animate flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-full bg-gray-50 theme-card flex items-center justify-center text-xl shadow-md border border-gray-100 color-bot hover:shadow-lg transition-all"><i class="fas fa-robot"></i></div><span class="text-[10px] font-bold text-gray-600">Bot Alert</span></button>
                     <button onclick="showView('keeper')" class="col-keeper anim-keeper btn-animate flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-full bg-gray-50 theme-card flex items-center justify-center text-xl shadow-md border border-gray-100 color-api hover:shadow-lg transition-all"><i class="fas fa-vault"></i></div><span class="text-[10px] font-bold text-gray-600">Keeper</span></button>
-                    <button onclick="showView('help')" class="col-help btn-animate flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-full bg-gray-50 theme-card flex items-center justify-center text-xl shadow-md border border-gray-100 text-gray-500 hover:shadow-lg transition-all"><i class="fas fa-headset"></i></div><span class="text-[10px] font-bold text-gray-600">Help</span></button>
                 </div>
             </div>
 
             <div class="px-4 mt-6 pb-4 font-bold">
                 <div class="flex justify-between items-end mb-4">
                     <h3 class="font-black text-sm tracking-wide">Recent Transactions</h3>
-                    <button onclick="showView('game')" class="text-[10px] font-bold accent-text hover:underline">VIEW ALL</button>
+                    <button onclick="showView('txn')" class="text-[10px] font-bold accent-text hover:underline">VIEW ALL</button>
                 </div>
                 <div id="home-txn-list" class="theme-card rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col"></div>
             </div>
@@ -360,7 +374,7 @@
             </header>
             
             <div class="p-6 text-center">
-                <div class="w-24 h-24 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center text-5xl mb-6 mx-auto shadow-inner border border-blue-100 animate-[botAlertWobble_2.5s_infinite]"><i class="fas fa-robot"></i></div>
+                <div class="w-24 h-24 bg-red-50 text-red-500 rounded-full flex items-center justify-center text-5xl mb-6 mx-auto shadow-inner border border-red-100 animate-[botAlertWobble_2.5s_infinite]"><i class="fas fa-robot"></i></div>
                 <h2 class="text-2xl font-black mb-2 tracking-wide text-contrast">Telegram Bot Alerts</h2>
                 <a href="https://t.me/NovaPayAlertBot" target="_blank" class="inline-block bg-blue-100 text-blue-600 font-black text-sm px-4 py-1.5 rounded-full mb-6 hover:bg-blue-200 transition-colors">@NovaPayAlertBot</a>
                 <p class="text-xs text-gray-500 mb-8 max-w-sm mx-auto leading-relaxed">This bot sends real-time notifications for your deposits, withdrawals, and transfers directly to your Telegram.</p>
@@ -748,74 +762,6 @@
             </div>
         </div>
 
-        <div id="view-game" class="view-section min-h-screen theme-card font-bold">
-            <header class="flex items-center p-4 shadow-sm sticky top-0 z-30 theme-card">
-                <button onclick="showView('home')" class="w-8 h-8 flex items-center justify-center text-slate-800 dark:text-white rounded-full"><i class="fas fa-arrow-left"></i></button>
-                <h1 class="ml-4 text-[16px] font-black tracking-wide text-contrast"><i class="fas fa-chart-line text-sm mr-1.5 accent-text"></i> WALLET STATISTICS</h1>
-            </header>
-            <div class="p-4">
-                <div class="grid grid-cols-2 gap-4 mb-6">
-                    <div class="theme-card p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-28 bg-gradient-to-br from-green-500/10 to-transparent cursor-pointer" onclick="handleSecretDeleteHistoryTap()">
-                        <div class="text-[10px] font-black tracking-wider text-gray-400">TOTAL CREDIT</div>
-                        <div id="stats-total-credit" class="text-xl font-black text-green-500 font-black">₹0.00</div>
-                    </div>
-                    <div class="theme-card p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-28 bg-gradient-to-br from-red-500/10 to-transparent">
-                        <div class="text-[10px] font-black tracking-wider text-gray-400">TOTAL DEBIT</div>
-                        <div id="stats-total-debit" class="text-xl font-black text-red-500 font-black">₹0.00</div>
-                    </div>
-                    <div class="theme-card p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-28 bg-gradient-to-br from-blue-500/10 to-transparent">
-                        <div class="text-[10px] font-black tracking-wider text-gray-400 font-bold">TOTAL NO OF TXN</div>
-                        <div id="stats-no-of-txns" class="text-xl font-black text-blue-500 font-black">0</div>
-                    </div>
-                    <div class="theme-card p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-28 bg-gradient-to-br from-amber-500/10 to-transparent">
-                        <div class="text-[10px] font-black tracking-wider text-gray-400 font-bold">SUCCESS RATE</div>
-                        <div id="stats-success-rate" class="text-xl font-black text-amber-500 font-black">100%</div>
-                    </div>
-                </div>
-
-                <div class="theme-card rounded-3xl p-5 border border-gray-100 shadow-sm mb-6">
-                    <div class="flex justify-between items-center mb-3">
-                        <h4 class="text-xs font-black tracking-wider text-gray-400 uppercase font-bold">Search & Filter</h4>
-                        <button onclick="clearStatsFilters()" class="text-[10px] font-bold accent-text hover:underline">RESET</button>
-                    </div>
-                    
-                    <div class="relative mb-3 font-semibold">
-                        <span class="absolute left-3 top-3.5 text-gray-400 text-xs"><i class="fas fa-search"></i></span>
-                        <input type="text" id="stats-search-input" oninput="filterStatsTransactions()" placeholder="Search by recipient, UTR, or comment..." class="w-full bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-4 py-3 text-xs focus:outline-none focus-accent transition-colors theme-card font-black">
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-[9px] font-bold text-gray-400 mb-1 uppercase tracking-wider font-bold">Status</label>
-                            <select id="stats-status-filter" onchange="filterStatsTransactions()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs focus-accent theme-card font-black font-semibold">
-                                <option value="all">All Statuses</option>
-                                <option value="Success">Success</option>
-                                <option value="Pending">Pending</option>
-                                <option value="Fail">Fail</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[9px] font-bold text-gray-400 mb-1 uppercase tracking-wider font-bold font-bold">Type</label>
-                            <select id="stats-type-filter" onchange="filterStatsTransactions()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs focus-accent theme-card font-black font-semibold font-bold">
-                                <option value="all">All Types</option>
-                                <option value="Received">Received</option>
-                                <option value="Credit">Credit</option>
-                                <option value="Debit">Debit</option>
-                                <option value="Api">API Payment</option>
-                                <option value="Withdraw">Withdrawal</option>
-                                <option value="Taxes">Taxes/Fees</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mb-4 text-left px-1 font-bold">
-                    <h3 class="font-black text-xs tracking-wider text-gray-400 uppercase">Filtered History</h3>
-                </div>
-                <div id="stats-txn-list" class="theme-card rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col mb-16 font-semibold"></div>
-            </div>
-        </div>
-
         <div id="view-myprofile" class="view-section min-h-screen theme-card font-bold">
             <header class="flex items-center p-4 sticky top-0 z-30 border-b border-gray-100 theme-card">
                 <button onclick="showView('home')" class="w-8 h-8 hover:bg-gray-100 text-slate-800 dark:text-white rounded-full flex items-center justify-center shadow-sm"><i class="fas fa-arrow-left text-gray-700 dark:text-white"></i></button>
@@ -867,35 +813,19 @@
                         <span class="accent-text font-black text-sm font-black font-black">₹<span class="global-balance blur-none">0.00</span></span>
                     </div>
                 </div>
-
-                <div class="w-full max-w-sm mt-6 grid grid-cols-2 gap-4 pb-8">
-                    <div class="theme-card p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-24 bg-gradient-to-br from-green-500/10 to-transparent">
-                        <div class="text-[10px] font-black tracking-wider text-gray-400">TOTAL CREDIT</div>
-                        <div id="prof-stats-total-credit" class="text-lg font-black text-green-500 font-black">₹0.00</div>
-                    </div>
-                    <div class="theme-card p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-24 bg-gradient-to-br from-red-500/10 to-transparent">
-                        <div class="text-[10px] font-black tracking-wider text-gray-400">TOTAL DEBIT</div>
-                        <div id="prof-stats-total-debit" class="text-lg font-black text-red-500 font-black">₹0.00</div>
-                    </div>
-                    <div class="theme-card p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-24 bg-gradient-to-br from-blue-500/10 to-transparent">
-                        <div class="text-[10px] font-black tracking-wider text-gray-400 font-bold">TOTAL NO OF TXN</div>
-                        <div id="prof-stats-no-of-txns" class="text-lg font-black text-blue-500 font-black">0</div>
-                    </div>
-                    <div class="theme-card p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-24 bg-gradient-to-br from-amber-500/10 to-transparent">
-                        <div class="text-[10px] font-black tracking-wider text-gray-400 font-bold">SUCCESS RATE</div>
-                        <div id="prof-stats-success-rate" class="text-lg font-black text-amber-500 font-black">100%</div>
-                    </div>
-                </div>
             </div>
         </div>
     </main>
 
     <nav class="fixed bottom-0 left-0 w-full theme-card shadow-[0_-10px_30px_rgba(0,0,0,0.05)] border-t border-gray-100 z-30 pb-safe transition-colors">
-        <div class="flex justify-between items-center px-10 py-2">
-            <a href="#" onclick="showView('home')" class="nav-item flex flex-col items-center gap-1 accent-text pt-2 pb-1 anim-nav-home"><i class="fas fa-home text-xl btn-animate"></i></a>
+        <div class="flex justify-between items-center px-6 py-2">
             <a href="#" onclick="showView('send')" class="nav-item flex flex-col items-center gap-1 text-gray-400 hover:text-red-500 pt-2 pb-1 anim-send"><i class="fas fa-paper-plane text-xl btn-animate"></i></a>
+            <a href="#" onclick="showView('gift')" class="nav-item flex flex-col items-center gap-1 text-gray-400 hover:text-red-500 pt-2 pb-1 anim-gift"><i class="fas fa-gift text-xl btn-animate"></i></a>
+            <a href="#" onclick="showView('home')" class="relative -top-6 group anim-nav-home">
+                <div class="w-16 h-16 accent-bg text-white rounded-full flex items-center justify-center shadow-lg border-4 theme-card"><i class="fas fa-home text-2xl"></i></div>
+            </a>
             <a href="#" onclick="showView('add')" class="nav-item flex flex-col items-center gap-1 text-gray-400 hover:text-red-500 pt-2 pb-1 anim-add"><i class="fas fa-plus-circle text-xl btn-animate"></i></a>
-            <a href="#" onclick="showView('txn')" class="nav-item flex flex-col items-center gap-1 text-gray-400 hover:text-red-500 pt-2 pb-1 anim-nav-txn"><i class="fas fa-receipt text-xl btn-animate"></i></a>
+            <a href="#" onclick="showView('myprofile')" class="nav-item flex flex-col items-center gap-1 text-gray-400 hover:text-red-500 pt-2 pb-1 anim-profile"><i class="fas fa-user text-xl btn-animate"></i></a>
         </div>
     </nav>
 
@@ -913,7 +843,9 @@
                 <li><a href="#" onclick="showView('myprofile'); toggleSidebar()" class="block px-6 py-3 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors font-semibold"><i class="fas fa-user-circle w-6"></i> My Profile</a></li>
                 <li><a href="#" onclick="showView('api'); toggleSidebar()" class="block px-6 py-3 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors font-semibold"><i class="fas fa-code w-6"></i> API System</a></li>
                 <li><a href="#" onclick="showAuthView('reset-pin'); document.getElementById('auth-wrapper').classList.remove('hidden'); toggleSidebar()" class="block px-6 py-3 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors font-semibold"><i class="fas fa-key w-6"></i> Change Security PIN</a></li>
-                <li><a href="#" onclick="showView('game'); toggleSidebar()" class="block px-6 py-3 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors font-semibold"><i class="fas fa-chart-line w-6"></i> Wallet Stats</a></li>
+                <li><a href="#" onclick="showView('botalert'); toggleSidebar()" class="block px-6 py-3 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors font-semibold"><i class="fas fa-robot w-6"></i> Bot Alert Settings</a></li>
+                <li><a href="#" onclick="window.open('https://t.me/ownerxnovapay', '_blank'); toggleSidebar()" class="block px-6 py-3 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors font-semibold"><i class="fas fa-headset w-6"></i> Support Section</a></li>
+                
                 <li><div class="h-px bg-gray-100 dark:bg-gray-800 my-2 mx-4 font-bold"></div></li>
                 <li><a href="#" onclick="logoutUser()" class="block px-6 py-3 text-red-500 hover:bg-red-50 dark:hover:bg-red-950 transition-colors font-semibold"><i class="fas fa-sign-out-alt w-6"></i> Logout</a></li>
             </ul>
