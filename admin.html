@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Nova Wallet Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-[#050000] text-white">
+
+    <div id="auth-box" class="min-h-screen flex items-center justify-center p-6">
+        <div class="theme-card w-full max-w-sm p-8 border border-red-500/30">
+            <h1 class="text-xl font-black text-center mb-6 text-red-500">ADMIN ACCESS</h1>
+            <input type="password" id="admin-key" placeholder="Enter Master Key" class="nova-input mb-6">
+            <button onclick="checkAdmin()" class="w-full accent-bg py-3 rounded-xl font-black">ENTER CONSOLE</button>
+        </div>
+    </div>
+
+    <div id="admin-panel" class="hidden p-4">
+        <header class="flex justify-between items-center mb-6">
+            <h1 class="text-lg font-black text-red-500 uppercase">Nova Wallet Console</h1>
+            <button onclick="location.reload()" class="text-xs text-gray-500 font-bold">LOGOUT</button>
+        </header>
+
+        <div class="grid grid-cols-2 gap-4 mb-8">
+            <div class="stat-rect">
+                <p class="text-[9px] font-bold text-gray-500 uppercase">Total Users</p>
+                <h3 id="stat-users" class="text-xl font-black">0</h3>
+            </div>
+            <div class="stat-rect">
+                <p class="text-[9px] font-bold text-gray-500 uppercase">Total Volume</p>
+                <h3 id="stat-balance" class="text-xl font-black">₹0</h3>
+            </div>
+        </div>
+
+        <div class="theme-card p-6 border border-red-500/20">
+            <label class="nova-label">Action on User</label>
+            <input type="tel" id="target-phone" placeholder="Mobile Number" class="nova-input mb-3">
+            <input type="number" id="target-amt" placeholder="Amount" class="nova-input mb-4">
+            <div class="grid grid-cols-3 gap-2">
+                <button onclick="doAction('credit')" class="bg-green-600 py-2 rounded-lg font-black text-xs">CREDIT</button>
+                <button onclick="doAction('debit')" class="bg-red-600 py-2 rounded-lg font-black text-xs">DEBIT</button>
+                <button onclick="doAction('reset')" class="bg-gray-600 py-2 rounded-lg font-black text-xs">RESET</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function checkAdmin() {
+            if(document.getElementById('admin-key').value === "YOUR_SECRET_KEY") {
+                document.getElementById('auth-box').classList.add('hidden');
+                document.getElementById('admin-panel').classList.remove('hidden');
+                loadStats();
+            } else { alert("Access Denied!"); }
+        }
+
+        async function loadStats() {
+            let res = await fetch('/api/admin', { method: 'POST', body: JSON.stringify({ action: 'FETCH_DASHBOARD' }) });
+            let json = await res.json();
+            document.getElementById('stat-users').innerText = json.data.usersCount;
+            document.getElementById('stat-balance').innerText = '₹' + json.data.totalBalance;
+        }
+
+        async function doAction(type) {
+            let phone = document.getElementById('target-phone').value;
+            let amt = parseFloat(document.getElementById('target-amt').value);
+            await fetch('/api/admin', { method: 'POST', body: JSON.stringify({ action: 'UPDATE_BALANCE', data: { phone, amount: amt, type } }) });
+            alert("Action Executed!");
+            loadStats();
+        }
+    </script>
+</body>
+</html>
