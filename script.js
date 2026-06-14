@@ -443,6 +443,9 @@ function initApp() {
     if(currentUser) {
         document.getElementById('ui-user-name').innerText = currentUser.name; 
         document.getElementById('ui-user-phone').innerText = currentUser.customId || currentUser.phone;
+        let customIdEl = document.getElementById('ui-user-custom');
+        if (customIdEl) customIdEl.innerText = currentUser.customId || 'Not Set';
+        
         document.getElementById('sidebar-name').innerText = currentUser.name; 
         document.getElementById('sidebar-phone').innerText = currentUser.customId || currentUser.phone;
     }
@@ -1202,10 +1205,10 @@ function updateStatsDashboard() {
     let pNum = document.getElementById('prof-stats-no-of-txns'); if(pNum) pNum.innerText = totalTxns;
     let pRate = document.getElementById('prof-stats-success-rate'); if(pRate) pRate.innerText = successRate;
 
-    // Home Page Stats
+    // Home Page Stats (Square Cards)
     let hCred = document.getElementById('home-stats-credit'); if(hCred) hCred.innerText = '₹' + totalCredit.toFixed(2);
-    let hDeb = document.getElementById('home-stats-debit'); if(hDeb) hDeb.innerText = '₹' + totalDebit.toFixed(2);
-    let hNum = document.getElementById('home-stats-count'); if(hNum) hNum.innerText = totalTxns;
+    let hSucc = document.getElementById('home-stats-count'); if(hSucc) hSucc.innerText = successCount;
+    let hTotal = document.getElementById('home-stats-count-total'); if(hTotal) hTotal.innerText = totalTxns;
     let hRate = document.getElementById('home-stats-rate'); if(hRate) hRate.innerText = successRate;
 
     filterStatsTransactions();
@@ -1467,6 +1470,19 @@ function switchLifafaTab(tabId) {
     if (tabId === 'lifafa-history') renderMyLifafas();
 }
 function switchKeeperTab(tabId) { document.querySelectorAll('.keeper-tab-btn').forEach(btn => btn.classList.remove('active')); document.querySelectorAll('.keeper-tab-content').forEach(c => c.classList.remove('active')); document.getElementById('btn-'+tabId).classList.add('active'); document.getElementById(tabId).classList.add('active'); }
+
+function searchTxn() {
+    let tid = document.getElementById('search-txn-id').value.trim().toUpperCase();
+    if(!tid) return showToast("Enter Transaction ID");
+    
+    let txn = transactions.find(t => t.id === tid);
+    if(txn) {
+        openTxnModal(txn.id);
+        document.getElementById('search-txn-id').value = '';
+    } else {
+        showToast("Transaction not found in your history.");
+    }
+}
 
 window.onload = async () => {
     await checkAuth();
