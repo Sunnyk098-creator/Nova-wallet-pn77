@@ -8,12 +8,11 @@
 }
 
 /* ----------------------------------------------------
-   RED GRID BACKGROUND (FIXED VISIBILITY)
+   RED GRID BACKGROUND
    ---------------------------------------------------- */
 body { 
     background-color: var(--theme-bg); 
     color: var(--theme-text); 
-    /* Increased opacity from 0.07 to 0.15 to make grid clearly visible */
     background-image: 
         linear-gradient(rgba(239, 68, 68, 0.15) 1px, transparent 1px), 
         linear-gradient(90deg, rgba(239, 68, 68, 0.15) 1px, transparent 1px);
@@ -77,7 +76,16 @@ body {
     box-shadow: 0 10px 30px rgba(239, 68, 68, 0.3) !important; 
     border: none; 
 }
-#home-main-card * { color: #ffffff !important; }
+
+/* Base rule forces white text inside balance card */
+#home-main-card, #home-main-card *, #home-main-card h3, #home-main-card span, #home-main-card p, #home-main-card h2 { color: #ffffff !important; }
+
+/* FIX: Override the white text specifically for the white Deposit button to avoid white-on-white text */
+#home-main-card .bal-btn-primary, 
+#home-main-card .bal-btn-primary i, 
+#home-main-card .bal-btn-primary span { 
+    color: #b91c1c !important; 
+}
 
 .bal-action-btn {
     flex: 1;
@@ -94,17 +102,18 @@ body {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     cursor: pointer;
 }
+
 .bal-btn-primary {
     background-color: rgba(255, 255, 255, 0.95) !important;
-    color: #b91c1c !important; 
     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
+
 .bal-btn-secondary {
     background-color: rgba(0, 0, 0, 0.3) !important;
-    color: #ffffff !important;
     border: 1px solid rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(5px);
 }
+
 .bal-action-btn:active { transform: scale(0.95); }
 
 /* Statistics 1x1 Cards Layout (Earning & Success Rate) */
