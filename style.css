@@ -14,9 +14,42 @@ body { background-color: var(--theme-bg); color: var(--theme-text); transition: 
 .text-gray-800, .text-black, h1, h2, h3, h4, p:not(.text-white) { color: #ffffff !important; }
 .text-gray-600 { color: #94a3b8 !important; }
 
-/* Force Balance Card to be Red */
+/* Force Balance Card to be Red Gradient */
 #home-main-card, #home-main-card *, #home-main-card h3, #home-main-card span, #home-main-card p, #home-main-card h2 { color: #ffffff !important; }
-#home-main-card { background-color: var(--accent-main) !important; box-shadow: 0 4px 15px var(--accent-glow) !important; border: none; }
+#home-main-card { background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%) !important; box-shadow: 0 4px 15px var(--accent-glow) !important; border: none; }
+
+/* Inner Balance Card Boxes */
+.bal-inner-box {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    padding: 0.75rem;
+    backdrop-filter: blur(5px);
+}
+
+/* Square Stats Card */
+.stat-square {
+    aspect-ratio: 1 / 1;
+    background-color: #000000 !important;
+    border: 1px solid rgba(239, 68, 68, 0.2) !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 1rem;
+    border-radius: 1.25rem;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+.stat-icon-wrapper {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.75rem;
+    background-color: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+}
 
 input, textarea, select { color: #ffffff !important; background-color: #1a1a1a !important; border-color: #333333 !important; }
 
@@ -42,17 +75,8 @@ input:focus, textarea:focus, select:focus { border-radius: 0.75rem !important; }
 
 .sidebar-profile-bg { background: linear-gradient(180deg, var(--accent-glow) 0%, transparent 100%); }
 
-/* VIBRANT DEFAULT DASHBOARD ICONS COLORS */
-.color-send { color: #3b82f6 !important; }
-.color-bulk { color: #a855f7 !important; }
-.color-add { color: #10b981 !important; }
-.color-withdraw { color: #ef4444 !important; }
-.color-lifafa { color: #f59e0b !important; }
-.color-gift { color: #ec4899 !important; }
-.color-api { color: #6366f1 !important; }
-.color-txn { color: #14b8a6 !important; }
-.color-stats { color: #0ea5e9 !important; }
-.color-bot { color: #2563eb !important; }
+/* VIBRANT DEFAULT DASHBOARD ICONS COLORS - Forced to Red */
+.color-send, .color-bulk, .color-add, .color-withdraw, .color-lifafa, .color-gift, .color-api, .color-txn, .color-stats, .color-bot, .color-official, .color-premium, .color-theme, .color-tags, .color-keeper, .color-help { color: var(--accent-main) !important; }
 
 html.mono-icons .color-send, html.mono-icons .color-bulk, html.mono-icons .color-add, html.mono-icons .color-withdraw, 
 html.mono-icons .color-lifafa, html.mono-icons .color-gift, html.mono-icons .color-api, html.mono-icons .color-txn, html.mono-icons .color-stats, html.mono-icons .color-bot {
@@ -154,18 +178,6 @@ html.anim-btns .anim-menu-icon:hover { transform: rotate(90deg); transition: tra
 /* PAYTM-STYLE GLOBAL RECEIPT BACKGROUND DYNAMICS */
 .paytm-receipt-bg { background-color: var(--theme-bg); color: var(--theme-text); }
 
-html.colorful-mode .col-send div, html.colorful-mode .col-bulk div, html.colorful-mode .col-add div, html.colorful-mode .col-withdraw div, html.colorful-mode .col-lifafa div, html.colorful-mode .col-gift div, html.colorful-mode .col-api div, html.colorful-mode .col-txn div, html.colorful-mode .col-theme div, html.colorful-mode .col-tags div, html.colorful-mode .col-keeper div, html.colorful-mode .col-stats div, html.colorful-mode .col-help div, html.colorful-mode .col-bot div { color: white !important; border: none !important; }
-html.colorful-mode .col-send div { background-color: #3b82f6 !important; box-shadow: 0 4px 15px rgba(59,130,246,0.4) !important; }
-html.colorful-mode .col-bulk div { background-color: #a855f7 !important; box-shadow: 0 4px 15px rgba(168,85,247,0.4) !important; }
-html.colorful-mode .col-add div { background-color: #10b981 !important; box-shadow: 0 4px 15px rgba(16,185,129,0.4) !important; }
-html.colorful-mode .col-withdraw div { background-color: #ef4444 !important; box-shadow: 0 4px 15px rgba(239,68,68,0.4) !important; }
-html.colorful-mode .col-lifafa div { background-color: #f59e0b !important; box-shadow: 0 4px 15px rgba(245,158,11,0.4) !important; }
-html.colorful-mode .col-gift div { background-color: #ec4899 !important; box-shadow: 0 4px 15px rgba(236,72,153,0.4) !important; }
-html.colorful-mode .col-api div { background-color: #6366f1 !important; box-shadow: 0 4px 15px rgba(99,102,241,0.4) !important; }
-html.colorful-mode .col-txn div { background-color: #14b8a6 !important; box-shadow: 0 4px 15px rgba(20,184,166,0.4) !important; }
-html.colorful-mode .col-stats div { background-color: #0ea5e9 !important; box-shadow: 0 4px 15px rgba(14,165,233,0.4) !important; }
-html.colorful-mode .col-bot div { background-color: #2563eb !important; box-shadow: 0 4px 15px rgba(37,99,235,0.4) !important; }
-
 .privacy-blur { filter: blur(8px); user-select: none; transition: filter 0.3s ease; }
 
 /* ----------------------------------------------------
@@ -190,3 +202,13 @@ html.colorful-mode .col-bot div { background-color: #2563eb !important; box-shad
 
 .anim-scratch-reveal { animation: scratchReveal 1.2s ease-out forwards; }
 @keyframes scratchReveal { 0% { clip-path: inset(0 100% 0 0); opacity: 0.5; } 100% { clip-path: inset(0 0 0 0); opacity: 1; } }
+
+/* Bottom Nav Indicator Highlight */
+.nav-btn-highlight {
+    background-color: var(--accent-main);
+    color: white !important;
+    border-radius: 1rem;
+    padding: 0.75rem 1rem;
+    box-shadow: 0 4px 15px var(--accent-glow);
+    transform: translateY(-5px);
+}
