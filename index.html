@@ -29,7 +29,6 @@
         </div>
     </div>
 
-    <!-- TRANSACTION SUCCESS RECEIPT OVERLAY -->
     <div id="txn-result-overlay" class="fixed inset-0 z-[9998] paytm-receipt-bg hidden flex-col items-center p-6 text-center overflow-y-auto">
         <div class="w-full flex justify-between items-center pt-4 mb-2">
             <span class="text-xs font-black tracking-widest text-gray-400 uppercase">Transaction Details</span>
@@ -79,7 +78,6 @@
         <button onclick="closeSuccessOverlay()" class="mt-8 mb-6 w-full max-w-sm theme-card border border-gray-200 dark:border-gray-700 text-contrast font-black py-4 rounded-xl shadow-sm tracking-wide animate-[slideUpFade_0.5s_ease-out_0.5s] opacity-0" style="animation-fill-mode: forwards;">BACK TO DASHBOARD</button>
     </div>
 
-    <!-- PUBLIC LIFAFA CLAIM FLOW -->
     <div id="public-lifafa-wrapper" class="fixed inset-0 theme-card z-[1000] hidden flex-col items-center justify-center p-6 text-center overflow-y-auto backdrop-blur-md bg-opacity-95">
         <div class="w-20 h-20 bg-red-50 text-red-500 rounded-3xl mx-auto flex items-center justify-center text-4xl mb-6 shadow-xl border border-red-200 animate-[slideDown_0.5s_ease-out] relative lifafa-float">
             <i class="fas fa-envelope-open-text relative z-10"></i>
@@ -96,7 +94,7 @@
         
         <div id="lif-public-step-2" class="hidden w-full max-w-sm theme-card rounded-3xl p-6 shadow-2xl border border-gray-100 text-left animate-[slideUpFade_0.5s_ease-out]">
             <label class="block text-xs font-bold text-gray-400 mb-4 tracking-wide uppercase text-center">Join Required Channels</label>
-            <a href="https://t.me/Nova_Wallet_Alert_Bot" target="_blank" class="block w-full bg-blue-100 hover:bg-blue-200 text-blue-700 font-black py-3 rounded-xl mb-4 text-center text-xs transition-colors border border-blue-200"><i class="fas fa-robot mr-1"></i> Start Verification Bot First</a>
+            <a href="https://t.me/NovaPayAlertBot" target="_blank" class="block w-full bg-blue-100 hover:bg-blue-200 text-blue-700 font-black py-3 rounded-xl mb-4 text-center text-xs transition-colors border border-blue-200"><i class="fas fa-robot mr-1"></i> Start Verification Bot First</a>
             <div id="public-channels-grid" class="grid grid-cols-2 gap-3 mb-6"></div>
             <button type="button" id="btn-lif-verify-channels" onclick="verifyLifafaChannelsJoined()" class="btn-animate w-full bg-blue-500 hover:bg-blue-600 text-white font-black py-4 rounded-xl shadow-lg transition-colors tracking-wide flex items-center justify-center gap-2"><i class="fas fa-sync-alt"></i> CHECK MEMBERSHIP</button>
             <div class="text-center mt-4"><button type="button" onclick="resetPublicLifafa()" class="text-gray-400 hover:text-red-500 text-xs font-bold transition-colors">Back</button></div>
@@ -130,7 +128,6 @@
         <div id="lif-public-result" class="hidden w-full max-w-sm theme-card rounded-3xl p-6 shadow-2xl border border-gray-100 text-center animate-[slideUpFade_0.5s_ease-out]"></div>
     </div>
 
-    <!-- SYSTEM MODALS & WRAPPERS -->
     <div id="customIdModal" class="fixed inset-0 bg-black bg-opacity-70 z-[600] hidden flex items-center justify-center backdrop-blur-sm transition-opacity duration-300 opacity-0">
         <div class="theme-card rounded-3xl p-6 max-w-sm w-full mx-4 shadow-2xl relative">
             <button onclick="closeCustomIdModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-800"><i class="fas fa-times text-xl"></i></button>
@@ -190,20 +187,19 @@
         </div>
     </div>
 
-    <!-- AUTH WRAPPER -->
     <div id="auth-wrapper" class="fixed inset-0 theme-card z-[200] overflow-y-auto hidden">
         <div id="auth-login" class="min-h-screen flex flex-col p-6 items-center justify-center relative font-bold">
             <div class="w-20 h-20 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center text-4xl mb-6 shadow-inner border border-red-100"><i class="fas fa-wallet animate-pulse"></i></div>
             <h1 class="text-3xl font-black italic tracking-tight mb-1 text-gray-800 dark:text-white">NOVA <span class="text-red-500">WALLET</span></h1>
             <p class="text-xs font-bold text-gray-400 tracking-widest mb-6 uppercase">Secure Ecosystem</p>
             <form onsubmit="event.preventDefault(); processLogin()" class="w-full max-w-sm theme-card rounded-3xl p-6 shadow-sm border border-gray-100 mt-2 font-medium">
-                <label class="block text-xs font-bold text-gray-400 mb-2">PHONE NUMBER</label>
-                <input type="tel" id="login-phone" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-4 focus-accent font-bold theme-card">
-                <label class="block text-xs font-bold text-gray-400 mb-2">EMAIL ADDRESS</label>
-                <input type="email" id="login-email" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-4 focus-accent font-bold theme-card">
-                <a href="https://t.me/Nova_Wallet_Alert_Bot" target="_blank" class="block bg-blue-50 text-blue-500 font-bold text-xs py-3 px-4 rounded-xl mb-4 text-center border border-blue-100 hover:bg-blue-100 transition-colors"><i class="fab fa-telegram"></i> Start the bot first to get OTP</a>
+                
+                <label class="block text-xs font-bold text-gray-400 mb-2">PHONE NUMBER / EMAIL ID</label>
+                <input type="text" id="login-phone" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-4 focus-accent font-bold theme-card" placeholder="Enter Phone or Email">
+                
                 <label class="block text-xs font-bold text-gray-400 mb-2">PASSWORD</label>
-                <input type="password" id="login-pass" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-6 focus-accent font-bold tracking-widest theme-card">
+                <input type="password" id="login-pass" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-6 focus-accent font-bold tracking-widest theme-card" placeholder="Enter Password">
+                
                 <button type="submit" class="btn-animate w-full accent-bg text-white font-black py-4 rounded-xl shadow-lg mb-4">SECURE LOGIN</button>
                 <div class="flex justify-between text-xs font-bold"><button type="button" onclick="showAuthView('reset-pin')" class="text-gray-400 hover:text-red-500 transition-colors font-semibold">Forgot PIN/Password?</button><button type="button" onclick="showAuthView('signup')" class="text-red-500 hover:text-red-600 transition-colors font-bold">Create Account</button></div>
             </form>
@@ -221,10 +217,10 @@
                 <label class="block text-xs font-bold text-gray-400 mb-1">TELEGRAM CHAT ID</label>
                 <div class="flex gap-2 mb-4">
                     <input type="text" id="reg-telegram" required placeholder="e.g. 123456789" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus-accent font-bold font-mono theme-card">
-                    <button type="button" onclick="window.open('https://t.me/Nova_Wallet_Alert_Bot', '_blank')" class="bg-red-500 hover:bg-red-600 transition-colors text-white rounded-xl px-4 font-bold text-xs flex items-center justify-center whitespace-nowrap shadow-md">Get ID</button>
+                    <button type="button" onclick="window.open('https://t.me/NovaPayAlertBot', '_blank')" class="bg-red-500 hover:bg-red-600 transition-colors text-white rounded-xl px-4 font-bold text-xs flex items-center justify-center whitespace-nowrap shadow-md">Get ID</button>
                 </div>
 
-                <button type="button" onclick="window.open('https://t.me/Nova_Wallet_Alert_Bot', '_blank')" class="block w-full bg-blue-50 text-blue-500 font-bold text-xs py-3 px-4 rounded-xl mb-4 text-center border border-blue-100 hover:bg-blue-100 transition-colors shadow-sm"><i class="fab fa-telegram mr-1"></i> Start the Alert Bot</button>
+                <button type="button" onclick="window.open('https://t.me/NovaPayAlertBot', '_blank')" class="block w-full bg-blue-50 text-blue-500 font-bold text-xs py-3 px-4 rounded-xl mb-4 text-center border border-blue-100 hover:bg-blue-100 transition-colors shadow-sm"><i class="fab fa-telegram mr-1"></i> Start the Alert Bot</button>
                 <button type="submit" id="btn-signup-otp" class="btn-animate w-full accent-bg text-white font-black py-4 rounded-xl shadow-lg mb-4">SEND OTP TO TELEGRAM</button>
                 <div class="text-center"><button type="button" onclick="showAuthView('login')" class="text-gray-400 hover:text-red-500 text-xs font-bold transition-colors">Back to Login</button></div>
             </form>
@@ -256,14 +252,13 @@
         </div>
     </div>
 
-    <!-- MAIN APP CONTAINER -->
     <main id="app-container">
         <div id="view-home" class="view-section active">
             <header class="flex justify-between items-center p-4 theme-card shadow-sm sticky top-0 z-30">
                 <button onclick="toggleSidebar()" class="text-xl hover:text-red-500 transition-colors accent-text anim-menu-icon"><i class="fas fa-bars"></i></button>
                 <h1 class="text-xl font-black tracking-widest accent-text italic">NOVA WALLET</h1>
                 <div class="flex items-center gap-4 font-bold">
-                    <button id="top-tg-btn" onclick="window.open('https://t.me/Nova_Wallet_Alert_Bot', '_blank')" class="accent-text text-2xl hover:scale-110 transition-transform cursor-pointer anim-nav-tg"><i class="fab fa-telegram"></i></button>
+                    <button id="top-tg-btn" onclick="window.open('https://t.me/NovaPayAlertBot', '_blank')" class="accent-text text-2xl hover:scale-110 transition-transform cursor-pointer anim-nav-tg"><i class="fab fa-telegram"></i></button>
                     <div class="w-9 h-9 rounded-full accent-bg text-white flex items-center justify-center font-bold border-2 accent-border cursor-pointer overflow-hidden animate-pulse" id="ui-user-initial">U</div>
                 </div>
             </header>
@@ -310,7 +305,6 @@
                     </div>
                 </div>
 
-                <!-- NEW STATS GRID UNDER BALANCE CARD -->
                 <div class="grid grid-cols-2 gap-3 mt-4 font-bold">
                     <div class="theme-card p-4 rounded-2xl border border-gray-100 shadow-sm">
                         <div class="text-[10px] font-black tracking-wider text-gray-400">TOTAL CREDIT</div>
@@ -368,7 +362,7 @@
             <div class="p-6 text-center">
                 <div class="w-24 h-24 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center text-5xl mb-6 mx-auto shadow-inner border border-blue-100 animate-[botAlertWobble_2.5s_infinite]"><i class="fas fa-robot"></i></div>
                 <h2 class="text-2xl font-black mb-2 tracking-wide text-contrast">Telegram Bot Alerts</h2>
-                <a href="https://t.me/Nova_Wallet_Alert_Bot" target="_blank" class="inline-block bg-blue-100 text-blue-600 font-black text-sm px-4 py-1.5 rounded-full mb-6 hover:bg-blue-200 transition-colors">@Nova_Wallet_Alert_Bot</a>
+                <a href="https://t.me/NovaPayAlertBot" target="_blank" class="inline-block bg-blue-100 text-blue-600 font-black text-sm px-4 py-1.5 rounded-full mb-6 hover:bg-blue-200 transition-colors">@NovaPayAlertBot</a>
                 <p class="text-xs text-gray-500 mb-8 max-w-sm mx-auto leading-relaxed">This bot sends real-time notifications for your deposits, withdrawals, and transfers directly to your Telegram.</p>
                 
                 <div class="theme-card rounded-3xl p-6 shadow-sm border border-gray-100 text-left max-w-sm mx-auto">
@@ -521,7 +515,7 @@
                 
                 <div class="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-4 rounded-2xl text-[11px] font-black mb-4 border border-blue-200 dark:border-blue-800 shadow-inner flex items-start gap-3">
                     <i class="fas fa-info-circle text-lg mt-0.5"></i>
-                    <p>Make <span class="font-mono bg-blue-100 dark:bg-blue-800 px-1 py-0.5 rounded">@Nova_Wallet_Alert_Bot</span> an admin in your channel to allow verification.</p>
+                    <p>Make <span class="font-mono bg-blue-100 dark:bg-blue-800 px-1 py-0.5 rounded">@NovaPayAlertBot</span> an admin in your channel to allow verification.</p>
                 </div>
 
                 <div id="lifafa-create-form-wrapper">
@@ -608,8 +602,7 @@
                     <button type="button" onclick="renderMyLifafas()" class="text-[10px] font-black accent-text"><i class="fas fa-sync-alt mr-1"></i>Refresh</button>
                 </div>
                 <div id="my-lifafa-list" class="space-y-4 pb-20 font-semibold">
-                    <!-- History gets injected here via JS -->
-                </div>
+                    </div>
             </div>
         </div>
 
@@ -661,7 +654,7 @@
                 <div class="theme-card rounded-2xl p-5 shadow-sm border border-gray-100 font-bold">
                     <p class="text-[10px] text-gray-400 font-bold mb-2 tracking-wider uppercase">WALLET TRANSFER API</p>
                     <p class="text-sm font-mono text-gray-300 break-all leading-relaxed mb-4 p-3 bg-slate-900 rounded-xl shadow-inner" id="ui-api-url-full">
-                        https://nova-wallet-pn77.vercel.app/api?key=<span class="accent-text" id="ui-api-key-url">LP-PENDING</span>&paytm=<span class="text-green-400">{number}</span>&amount=<span class="text-green-400">{amount}</span>&comment=<span class="text-green-400">{comment}</span>
+                        https://nova-wallet-pn77.vercel.app/api?key=<span class="accent-text" id="ui-api-key-url">NW-PENDING</span>&paytm=<span class="text-green-400">{number}</span>&amount=<span class="text-green-400">{amount}</span>&comment=<span class="text-green-400">{comment}</span>
                     </p>                    
                     <div class="text-xs font-mono text-gray-500 mb-2 pl-2 space-y-1 font-medium">
                         <p>transaction :- receiver number</p>
@@ -673,7 +666,7 @@
                 <div class="theme-card rounded-2xl p-5 shadow-sm border border-gray-100 font-medium">
                     <p class="text-[10px] text-gray-400 font-bold mb-2 tracking-wider uppercase">UPI WITHDRAWAL API</p>
                     <p class="text-sm font-mono text-gray-300 break-all leading-relaxed mb-4 p-3 bg-slate-900 rounded-xl shadow-inner" id="ui-api-url-upi">
-                        https://nova-wallet-pn77.vercel.app/api?token=<span class="accent-text" id="ui-api-key-upi">LP-PENDING</span>&upi_id=<span class="text-green-400">{upi_id}</span>&amount=<span class="text-green-400">{amount}</span>&comment=<span class="text-green-400">{comment}</span>
+                        https://nova-wallet-pn77.vercel.app/api?token=<span class="accent-text" id="ui-api-key-upi">NW-PENDING</span>&upi_id=<span class="text-green-400">{upi_id}</span>&amount=<span class="text-green-400">{amount}</span>&comment=<span class="text-green-400">{comment}</span>
                     </p>
                     <div class="text-xs font-mono text-gray-500 pl-2 space-y-1">
                         <p>Upi_id :- reciver upi id</p>
@@ -687,7 +680,7 @@
                     <div class="theme-card rounded-xl p-4 flex justify-between items-center border border-gray-200 mb-5 font-bold">
                         <div>
                             <p class="text-[10px] accent-text font-bold mb-1 tracking-wider">SECRET KEY</p>
-                            <p class="accent-text font-mono font-black tracking-widest text-lg" id="ui-api-key-display">LP-PENDING</p>
+                            <p class="accent-text font-mono font-black tracking-widest text-lg" id="ui-api-key-display">NW-PENDING</p>
                         </div>
                     </div>
                     <button onclick="regenerateApiKey()" class="btn-animate w-full border-2 accent-border accent-text font-bold py-3.5 rounded-xl font-bold">REGENERATE API KEY</button>
