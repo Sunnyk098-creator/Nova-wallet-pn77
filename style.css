@@ -1,0 +1,192 @@
+:root {
+    --theme-bg: #000000;
+    --theme-text: #ffffff;
+    --theme-card: #121212;
+    --accent-main: #ef4444; /* Nova Wallet Red */
+    --accent-glow: rgba(239, 68, 68, 0.6);
+}
+
+body { background-color: var(--theme-bg); color: var(--theme-text); transition: background-color 0.3s ease, color 0.3s ease; margin: 0; }
+.theme-card { background-color: var(--theme-card); color: var(--theme-text); border-color: rgba(255,255,255,0.05); transition: background-color 0.3s ease, border-color 0.3s ease; }
+
+.text-contrast { color: #ffffff !important; }
+.text-contrast-muted { color: #cbd5e1 !important; }
+.text-gray-800, .text-black, h1, h2, h3, h4, p:not(.text-white) { color: #ffffff !important; }
+.text-gray-600 { color: #94a3b8 !important; }
+
+/* Force Balance Card to be Red */
+#home-main-card, #home-main-card *, #home-main-card h3, #home-main-card span, #home-main-card p, #home-main-card h2 { color: #ffffff !important; }
+#home-main-card { background-color: var(--accent-main) !important; box-shadow: 0 4px 15px var(--accent-glow) !important; border: none; }
+
+input, textarea, select { color: #ffffff !important; background-color: #1a1a1a !important; border-color: #333333 !important; }
+
+button:focus, a:focus, input:focus, select:focus, textarea:focus, div:focus { outline: none !important; box-shadow: 0 0 0 3px var(--accent-glow) !important; border-radius: 9999px !important; }
+input:focus, textarea:focus, select:focus { border-radius: 0.75rem !important; }
+
+.accent-bg { background-color: var(--accent-main) !important; color: white !important; } .accent-text { color: var(--accent-main) !important; } .accent-border { border-color: var(--accent-main) !important; } .accent-shadow { box-shadow: 0 4px 15px var(--accent-glow) !important; } .focus-accent:focus { border-color: var(--accent-main) !important; box-shadow: 0 0 0 2px var(--accent-glow) !important; }
+
+.transition-transform { transition: transform 0.3s ease-in-out; } ::-webkit-scrollbar { display: none; } .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Global Fade/Slide Screen Transition */
+.view-section { display: none; opacity: 0; } .view-section.active { display: block; animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+@keyframes slideUpFade { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideDown { from { transform: translate(-50%, -100%); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+
+/* Global Button Shrink & Restore on Press */
+.btn-animate { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); will-change: transform, box-shadow; }
+.btn-animate:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 10px 20px var(--accent-glow); } 
+.btn-animate:active { transform: scale(0.95); }
+
+.tab-btn.active { background-color: var(--accent-main); color: white; } .tab-btn { background-color: transparent; color: #6b7280; } .tab-content { display: none; } .tab-content.active { display: block; animation: slideUpFade 0.3s ease forwards; }
+.keeper-tab-btn.active { background-color: var(--theme-card); color: var(--accent-main); box-shadow: 0 2px 4px rgba(0,0,0,0.05); font-weight: bold;} .keeper-tab-content { display: none; } .keeper-tab-content.active { display: block; animation: slideUpFade 0.3s ease forwards; }
+
+.sidebar-profile-bg { background: linear-gradient(180deg, var(--accent-glow) 0%, transparent 100%); }
+
+/* VIBRANT DEFAULT DASHBOARD ICONS COLORS */
+.color-send { color: #3b82f6 !important; }
+.color-bulk { color: #a855f7 !important; }
+.color-add { color: #10b981 !important; }
+.color-withdraw { color: #ef4444 !important; }
+.color-lifafa { color: #f59e0b !important; }
+.color-gift { color: #ec4899 !important; }
+.color-api { color: #6366f1 !important; }
+.color-txn { color: #14b8a6 !important; }
+.color-stats { color: #0ea5e9 !important; }
+.color-bot { color: #2563eb !important; }
+
+html.mono-icons .color-send, html.mono-icons .color-bulk, html.mono-icons .color-add, html.mono-icons .color-withdraw, 
+html.mono-icons .color-lifafa, html.mono-icons .color-gift, html.mono-icons .color-api, html.mono-icons .color-txn, html.mono-icons .color-stats, html.mono-icons .color-bot {
+    color: var(--accent-main) !important;
+}
+
+#rocket-overlay { background: linear-gradient(to bottom, #111 0%, #000 100%) !important; }
+.rocket-ground { position: absolute; bottom: 0; width: 100%; height: 15%; background: #166534; border-radius: 0; box-shadow: inset 0 5px 15px rgba(0,0,0,0.1); z-index: 1; }
+
+.straight-rocket-wrapper { position: absolute; bottom: 15%; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 5; }
+.straight-rocket { font-size: 80px; transform: rotate(-45deg); display: inline-block; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.3)); }
+.rocket-fire { width: 16px; height: 40px; background: linear-gradient(to bottom, #fde047, #ef4444, transparent); border-radius: 0 0 20px 20px; margin-top: -15px; margin-left: -5px; animation: exhaustFlicker 0.1s infinite alternate; opacity: 0; filter: blur(2px); }
+@keyframes exhaustFlicker { 0% { transform: scaleY(1); opacity: 0.8; } 100% { transform: scaleY(1.3); opacity: 1; } }
+
+@keyframes slowRocketLaunch { 
+    0% { transform: translateX(-50%) translateY(0) scale(1); } 
+    15% { transform: translateX(-50%) translateY(0) scale(1); } 
+    100% { transform: translateX(-50%) translateY(-150vh) scale(1.1); } 
+}
+.animate-rocket-fly-slow { animation: slowRocketLaunch 2s cubic-bezier(0.5, 0.05, 0.1, 1) forwards; }
+.animate-rocket-fly-slow .rocket-fire { opacity: 1; transition: opacity 0.2s; }
+
+/* ----------------------------------------------------
+   ANIMATIONS
+   ---------------------------------------------------- */
+
+@keyframes planeFly { 0% { transform: translate(0,0); opacity: 1; } 40% { transform: translate(15px, -15px) scale(0); opacity: 0; } 41% { transform: translate(-15px, 15px) scale(0); } 100% { transform: translate(0,0) scale(1); opacity: 1; } }
+@keyframes popStagger { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
+@keyframes rotateScaleIn { 0% { transform: rotate(-90deg) scale(0.5); } 100% { transform: rotate(0) scale(1); } }
+@keyframes slideUpBounce { 0% { transform: translateY(0); } 40% { transform: translateY(-10px); } 60% { transform: translateY(0); } 80% { transform: translateY(-4px); } 100% { transform: translateY(0); } }
+@keyframes envelopeOpen { 0% { transform: scale(1); } 50% { transform: scale(1.1) rotateY(180deg); } 100% { transform: scale(1) rotateY(360deg); } }
+@keyframes giftSpark { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-15deg) scale(1.1); } 75% { transform: rotate(15deg) scale(1.1); } }
+@keyframes pulseBrackets { 0%, 100% { opacity: 1; transform: scaleX(1); } 50% { opacity: 0.5; transform: scaleX(1.3); } }
+@keyframes searchSweep { 0%, 100% { transform: translateX(0) rotate(0); } 25% { transform: translateX(-5px) rotate(-15deg); } 75% { transform: translateX(5px) rotate(15deg); } }
+@keyframes graphRise { 0% { clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0 100%); } 100% { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); } }
+@keyframes lockTwist { 0% { transform: rotate(0deg); } 25% { transform: rotate(-15deg); } 75% { transform: rotate(15deg); } 100% { transform: rotate(0deg); } }
+@keyframes botAlertWobble { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-10deg); } 75% { transform: rotate(10deg); } }
+
+/* Normal Hover Animations */
+html.anim-btns:not(.idle-anim-on) .anim-send:hover i { animation: planeFly 1s ease forwards; }
+html.anim-btns:not(.idle-anim-on) .anim-bulk:hover i { animation: popStagger 0.5s ease; }
+html.anim-btns:not(.idle-anim-on) .anim-add:hover i { animation: rotateScaleIn 0.5s ease; }
+html.anim-btns:not(.idle-anim-on) .anim-withdraw:hover i { animation: slideUpBounce 0.6s ease; }
+html.anim-btns:not(.idle-anim-on) .anim-lifafa:hover i { animation: envelopeOpen 0.8s ease; }
+html.anim-btns:not(.idle-anim-on) .anim-gift:hover i { animation: giftSpark 0.6s ease; }
+html.anim-btns:not(.idle-anim-on) .anim-api:hover i { animation: pulseBrackets 0.8s ease; }
+html.anim-btns:not(.idle-anim-on) .anim-txn:hover i { animation: searchSweep 0.8s ease; }
+html.anim-btns:not(.idle-anim-on) .anim-stats:hover i { animation: graphRise 0.8s ease; }
+html.anim-btns:not(.idle-anim-on) .anim-keeper:hover i { animation: lockTwist 0.6s ease; }
+html.anim-btns:not(.idle-anim-on) .anim-bot:hover i { animation: botAlertWobble 0.6s ease infinite; }
+
+/* Idle Animations Toggle (Always Playing) */
+html.idle-anim-on .anim-send i { animation: planeFly 2.5s ease infinite; }
+html.idle-anim-on .anim-bulk i { animation: popStagger 2.5s ease infinite; }
+html.idle-anim-on .anim-add i { animation: rotateScaleIn 2.5s ease infinite; }
+html.idle-anim-on .anim-withdraw i { animation: slideUpBounce 2.5s ease infinite; }
+html.idle-anim-on .anim-lifafa i { animation: envelopeOpen 2.5s ease infinite; }
+html.idle-anim-on .anim-gift i { animation: giftSpark 2.5s ease infinite; }
+html.idle-anim-on .anim-api i { animation: pulseBrackets 2.5s ease infinite; }
+html.idle-anim-on .anim-txn i { animation: searchSweep 2.5s ease infinite; }
+html.idle-anim-on .anim-stats i { animation: graphRise 2.5s ease infinite; }
+html.idle-anim-on .anim-keeper i { animation: lockTwist 2.5s ease infinite; }
+html.idle-anim-on .anim-bot i { animation: botAlertWobble 2.5s ease infinite; }
+
+/* Home / Nav Pulse */
+html.anim-btns .anim-nav-home:hover i { animation: softPulse 1s ease infinite alternate; }
+@keyframes softPulse { 0% { transform: scale(1); } 100% { transform: scale(1.15); } }
+
+/* Telegram → Paper Plane Glide */
+html.anim-btns .anim-nav-tg:hover i { animation: planeGlide 1s ease infinite alternate; }
+@keyframes planeGlide { 0% { transform: translate(0, 0); } 100% { transform: translate(3px, -3px); } }
+
+/* Receipt History Slide Up */
+html.anim-btns .anim-nav-txn:hover i { animation: receiptSlideUp 0.5s ease; }
+@keyframes receiptSlideUp { 0% { transform: translateY(0); } 50% { transform: translateY(-5px); opacity: 0.7; } 100% { transform: translateY(0); opacity: 1; } }
+
+/* Wallet Card → 3D Tilt on Touch */
+html.anim-btns #home-main-card:hover { transform: perspective(1000px) rotateX(2deg) rotateY(-2deg) scale3d(1.02, 1.02, 1.02); }
+
+/* Verified Badge Soft Pulse */
+html.anim-btns #ui-verified-badge { animation: softPulseBadge 2s ease infinite alternate; }
+@keyframes softPulseBadge { 0% { opacity: 0.8; transform: scale(1); } 100% { opacity: 1; transform: scale(1.05); } }
+
+/* Wallet ID Edit Icon Shake */
+html.anim-btns .anim-edit-icon:hover { animation: smallShake 0.4s; }
+@keyframes smallShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-2px) rotate(-5deg); } 75% { transform: translateX(2px) rotate(5deg); } }
+
+/* Menu Morph Simulation */
+html.anim-btns .anim-menu-icon:hover { transform: rotate(90deg); transition: transform 0.3s ease; }
+
+/* Loading Skeleton Shimmer */
+.skeleton-shimmer { background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+/* Failure Shake Animation */
+.animate-shake { animation: failShake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+@keyframes failShake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(4px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-6px, 0, 0); } 40%, 60% { transform: translate3d(6px, 0, 0); } }
+
+/* PAYTM-STYLE GLOBAL RECEIPT BACKGROUND DYNAMICS */
+.paytm-receipt-bg { background-color: var(--theme-bg); color: var(--theme-text); }
+
+html.colorful-mode .col-send div, html.colorful-mode .col-bulk div, html.colorful-mode .col-add div, html.colorful-mode .col-withdraw div, html.colorful-mode .col-lifafa div, html.colorful-mode .col-gift div, html.colorful-mode .col-api div, html.colorful-mode .col-txn div, html.colorful-mode .col-theme div, html.colorful-mode .col-tags div, html.colorful-mode .col-keeper div, html.colorful-mode .col-stats div, html.colorful-mode .col-help div, html.colorful-mode .col-bot div { color: white !important; border: none !important; }
+html.colorful-mode .col-send div { background-color: #3b82f6 !important; box-shadow: 0 4px 15px rgba(59,130,246,0.4) !important; }
+html.colorful-mode .col-bulk div { background-color: #a855f7 !important; box-shadow: 0 4px 15px rgba(168,85,247,0.4) !important; }
+html.colorful-mode .col-add div { background-color: #10b981 !important; box-shadow: 0 4px 15px rgba(16,185,129,0.4) !important; }
+html.colorful-mode .col-withdraw div { background-color: #ef4444 !important; box-shadow: 0 4px 15px rgba(239,68,68,0.4) !important; }
+html.colorful-mode .col-lifafa div { background-color: #f59e0b !important; box-shadow: 0 4px 15px rgba(245,158,11,0.4) !important; }
+html.colorful-mode .col-gift div { background-color: #ec4899 !important; box-shadow: 0 4px 15px rgba(236,72,153,0.4) !important; }
+html.colorful-mode .col-api div { background-color: #6366f1 !important; box-shadow: 0 4px 15px rgba(99,102,241,0.4) !important; }
+html.colorful-mode .col-txn div { background-color: #14b8a6 !important; box-shadow: 0 4px 15px rgba(20,184,166,0.4) !important; }
+html.colorful-mode .col-stats div { background-color: #0ea5e9 !important; box-shadow: 0 4px 15px rgba(14,165,233,0.4) !important; }
+html.colorful-mode .col-bot div { background-color: #2563eb !important; box-shadow: 0 4px 15px rgba(37,99,235,0.4) !important; }
+
+.privacy-blur { filter: blur(8px); user-select: none; transition: filter 0.3s ease; }
+
+/* ----------------------------------------------------
+   LIFAFA RICH UI ANIMATIONS & CUSTOM STYLES
+   ---------------------------------------------------- */
+.lifafa-float { animation: floatEnv 3s ease-in-out infinite; }
+@keyframes floatEnv { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-10px) scale(1.05); } }
+
+.channel-box { animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+.channel-box:nth-child(1) { animation-delay: 0.1s; }
+.channel-box:nth-child(2) { animation-delay: 0.2s; }
+.channel-box:nth-child(3) { animation-delay: 0.3s; }
+.channel-box:nth-child(4) { animation-delay: 0.4s; }
+.channel-box:nth-child(5) { animation-delay: 0.5s; }
+
+.lifafa-success-ring { border: 4px solid #22c55e; animation: expandRing 0.5s ease-out forwards; border-radius: 50%; position: absolute; inset: -4px; pointer-events: none; opacity: 0; }
+@keyframes expandRing { 0% { transform: scale(0.8); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
+
+/* Coin Toss & Scratch Reveal Animations */
+.anim-coin-flip { animation: coinFlip 1s ease-in-out forwards; transform-style: preserve-3d; }
+@keyframes coinFlip { 0% { transform: rotateY(0deg) scale(1); } 50% { transform: rotateY(360deg) scale(1.2); } 100% { transform: rotateY(720deg) scale(1); } }
+
+.anim-scratch-reveal { animation: scratchReveal 1.2s ease-out forwards; }
+@keyframes scratchReveal { 0% { clip-path: inset(0 100% 0 0); opacity: 0.5; } 100% { clip-path: inset(0 0 0 0); opacity: 1; } }
