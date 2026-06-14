@@ -269,6 +269,11 @@
                     </div>
                 </div>
 
+                <div class="flex items-center gap-2 mb-3 mt-6 px-1">
+                    <div class="w-1.5 h-4 bg-red-500 rounded-full"></div>
+                    <h3 class="font-black text-xs tracking-widest text-gray-400 uppercase">Account Statistics</h3>
+                </div>
+
                 <div class="grid grid-cols-2 gap-4 mt-2 mb-6">
                     <div class="stat-rect cursor-pointer" onclick="handleSecretDeleteHistoryTap()">
                         <p class="text-[10px] font-black tracking-widest text-gray-500 uppercase mb-1"><i class="fas fa-arrow-trend-up text-red-500 mr-1"></i> Earning</p>
@@ -278,6 +283,11 @@
                         <p class="text-[10px] font-black tracking-widest text-gray-500 uppercase mb-1"><i class="fas fa-percent text-red-500 mr-1"></i> Success Rate</p>
                         <div id="home-stats-rate" class="text-xl font-black text-contrast tracking-tight">100%</div>
                     </div>
+                </div>
+
+                <div class="flex items-center gap-2 mb-3 mt-6 px-1">
+                    <div class="w-1.5 h-4 bg-red-500 rounded-full"></div>
+                    <h3 class="font-black text-xs tracking-widest text-gray-400 uppercase">Quick Actions</h3>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4 mx-1 mb-8" id="grid-container-actions">
@@ -307,6 +317,17 @@
                     </button>
                 </div>
             </div>
+
+            <div class="px-4 pb-4 font-bold relative z-10">
+                <div class="flex items-center justify-between gap-2 mb-4 px-1">
+                    <div class="flex items-center gap-2">
+                        <div class="w-1.5 h-4 bg-red-500 rounded-full"></div>
+                        <h3 class="font-black text-xs tracking-widest text-gray-400 uppercase">Recent Transactions</h3>
+                    </div>
+                    <button onclick="showView('txn')" class="text-[10px] font-bold accent-text hover:underline">VIEW ALL</button>
+                </div>
+                <div id="home-txn-list" class="theme-card rounded-2xl shadow-sm border border-gray-800 overflow-hidden flex flex-col"></div>
+            </div>
         </div>
 
         <div id="view-send" class="view-section relative z-10">
@@ -319,6 +340,7 @@
                     <span class="text-xs text-gray-400 uppercase tracking-widest font-black">BALANCE</span>
                     <span class="text-red-500 text-xl font-black">₹<span class="global-balance blur-none transition-all">0.00</span></span>
                 </div>
+                
                 <form id="form-send" onsubmit="event.preventDefault(); initiateAction('send')" class="theme-card rounded-3xl p-6 shadow-2xl border border-red-500/10">
                     <label class="nova-label"><i class="fas fa-phone mr-1"></i> RECIPIENT IDENTIFIER</label>
                     <input type="text" id="send-num" required placeholder="Enter Mobile Number" class="nova-input mb-5 font-mono">
@@ -493,7 +515,7 @@
                             <button type="button" onclick="addLifafaChannelInput()" class="text-xs font-black text-red-400 uppercase tracking-widest hover:text-white"><i class="fas fa-plus-circle mr-1"></i> Add Requirement</button>
                         </div>
 
-                        <label class="nova-label">Secret Access Code</label>
+                        <label class="nova-label">Secret Access Code (Optional)</label>
                         <input type="text" id="lif-password" placeholder="Leave blank if public" class="nova-input mb-8 font-mono tracking-widest text-center">
                         
                         <button type="submit" class="btn-animate w-full accent-bg text-white font-black py-4 rounded-xl shadow-lg uppercase tracking-widest text-sm">GENERATE & DEDUCT</button>
@@ -680,7 +702,6 @@
     <div id="sidebar" class="fixed top-0 left-0 w-[280px] h-full bg-[#121212] shadow-[10px_0_30px_rgba(0,0,0,0.8)] z-[110] transform -translate-x-full transition-transform duration-300 flex flex-col border-r border-red-500/20">
         
         <div class="p-6 bg-gradient-to-br from-red-600 to-red-800 text-white flex justify-between items-center shadow-lg relative overflow-hidden">
-            <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div>
             <h2 class="text-xl font-black tracking-widest flex items-center gap-2 relative z-10"><i class="fas fa-wallet"></i> MENU</h2>
             <button onclick="toggleSidebar()" class="hover:rotate-90 transition-transform relative z-10"><i class="fas fa-times text-2xl"></i></button>
         </div>
@@ -702,7 +723,6 @@
             <ul class="space-y-1">
                 <li><a href="#" onclick="showView('api'); toggleSidebar()" class="block px-6 py-4 hover:bg-red-500/10 text-gray-300 hover:text-white transition-colors font-black text-xs tracking-widest uppercase"><i class="fas fa-code w-6 text-red-500"></i> API Integrations</a></li>
                 <li><a href="#" onclick="showAuthView('reset-pin'); document.getElementById('auth-wrapper').classList.remove('hidden'); toggleSidebar()" class="block px-6 py-4 hover:bg-red-500/10 text-gray-300 hover:text-white transition-colors font-black text-xs tracking-widest uppercase"><i class="fas fa-key w-6 text-red-500"></i> Modify Security PIN</a></li>
-                <li><a href="#" onclick="showView('botalert'); toggleSidebar()" class="block px-6 py-4 hover:bg-red-500/10 text-gray-300 hover:text-white transition-colors font-black text-xs tracking-widest uppercase"><i class="fas fa-robot w-6 text-red-500"></i> Bot Alerts</a></li>
                 <li><a href="#" onclick="window.open('https://t.me/ownerxnovapay', '_blank'); toggleSidebar()" class="block px-6 py-4 hover:bg-red-500/10 text-gray-300 hover:text-white transition-colors font-black text-xs tracking-widest uppercase"><i class="fas fa-headset w-6 text-red-500"></i> Get Support</a></li>
                 <li><div class="h-px bg-gray-800 my-2 mx-6"></div></li>
                 <li><a href="#" onclick="logoutUser()" class="block px-6 py-4 text-red-500 hover:bg-red-900/30 transition-colors font-black text-xs tracking-widest uppercase"><i class="fas fa-power-off w-6"></i> Terminate Session</a></li>
@@ -711,15 +731,5 @@
     </div>
 
     <script src="script.js"></script>
-    <script>
-        setInterval(() => {
-            const emailEl = document.getElementById('ui-user-email');
-            if (emailEl && window.currentUser && window.currentUser.email) {
-                if(emailEl.innerText !== window.currentUser.email) {
-                    emailEl.innerText = window.currentUser.email;
-                }
-            }
-        }, 1000);
-    </script>
 </body>
 </html>
