@@ -8,15 +8,15 @@
 }
 
 /* ----------------------------------------------------
-   RED GRID BACKGROUND & CORE
+   RED GRID BACKGROUND (FIXED VISIBILITY)
    ---------------------------------------------------- */
 body { 
     background-color: var(--theme-bg); 
     color: var(--theme-text); 
-    /* Red Grid Lines */
+    /* Increased opacity from 0.07 to 0.15 to make grid clearly visible */
     background-image: 
-        linear-gradient(rgba(239, 68, 68, 0.07) 1px, transparent 1px), 
-        linear-gradient(90deg, rgba(239, 68, 68, 0.07) 1px, transparent 1px);
+        linear-gradient(rgba(239, 68, 68, 0.15) 1px, transparent 1px), 
+        linear-gradient(90deg, rgba(239, 68, 68, 0.15) 1px, transparent 1px);
     background-size: 35px 35px;
     background-position: center top;
     transition: background-color 0.3s ease, color 0.3s ease; 
@@ -29,7 +29,7 @@ body {
 .text-gray-600 { color: #94a3b8 !important; }
 
 /* ----------------------------------------------------
-   REDESIGNED CARDS & FORMS (NEW LOOK)
+   REDESIGNED CARDS & FORMS
    ---------------------------------------------------- */
 .theme-card { 
     background-color: var(--theme-card); 
@@ -79,7 +79,6 @@ body {
 }
 #home-main-card * { color: #ffffff !important; }
 
-/* Deposit / Withdraw Buttons Fix */
 .bal-action-btn {
     flex: 1;
     padding: 0.9rem 0;
@@ -97,7 +96,7 @@ body {
 }
 .bal-btn-primary {
     background-color: rgba(255, 255, 255, 0.95) !important;
-    color: #b91c1c !important; /* Fixed blank white issue */
+    color: #b91c1c !important; 
     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
 .bal-btn-secondary {
@@ -108,23 +107,31 @@ body {
 }
 .bal-action-btn:active { transform: scale(0.95); }
 
-/* 1x1 Full Width Stat Card */
-.stat-full-card {
+/* Statistics 1x1 Cards Layout (Earning & Success Rate) */
+.stat-rect {
     background-color: var(--theme-card);
-    border: 1px solid rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(255,255,255,0.05);
     border-radius: 1.25rem;
-    padding: 1.5rem;
+    padding: 1.25rem;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-    margin-bottom: 0.75rem;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     position: relative;
     overflow: hidden;
+    transition: transform 0.3s ease;
 }
-.stat-full-card::before {
-    content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+.stat-rect:hover {
+    transform: translateY(-2px);
+    border-color: rgba(239, 68, 68, 0.2);
+}
+.stat-rect::before {
+    content: '';
+    position: absolute;
+    top: 15%; left: 0; width: 4px; height: 70%;
     background-color: var(--accent-main);
+    border-radius: 0 4px 4px 0;
 }
 
 /* ----------------------------------------------------
@@ -264,8 +271,12 @@ body {
 .scan-btn.active-torch { color: #facc15; border-color: #facc15; }
 
 /* ----------------------------------------------------
-   GLOBAL HELPERS
+   GLOBAL HELPERS & ANIMATIONS
    ---------------------------------------------------- */
+input, textarea, select { color: #ffffff !important; background-color: #1a1a1a !important; border-color: #333333 !important; }
+button:focus, a:focus, input:focus, select:focus, textarea:focus, div:focus { outline: none !important; box-shadow: 0 0 0 3px var(--accent-glow) !important; border-radius: 9999px !important; }
+input:focus, textarea:focus, select:focus { border-radius: 0.75rem !important; }
+
 .accent-bg { background-color: var(--accent-main) !important; color: white !important; } 
 .accent-text { color: var(--accent-main) !important; } 
 .accent-border { border-color: var(--accent-main) !important; } 
@@ -285,14 +296,11 @@ body {
 
 .anim-nav-home:hover i { animation: softPulse 1s ease infinite alternate; }
 @keyframes softPulse { 0% { transform: scale(1); } 100% { transform: scale(1.15); } }
-.anim-nav-qr { animation: continuousFloat 3s ease-in-out infinite; }
-@keyframes continuousFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 
 .animate-shake { animation: failShake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
 @keyframes failShake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(4px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-6px, 0, 0); } 40%, 60% { transform: translate3d(6px, 0, 0); } }
 
 .paytm-receipt-bg { background-color: #050000; color: #ffffff; }
 
-/* Custom Scrollbar hide */
 ::-webkit-scrollbar { display: none; } 
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
