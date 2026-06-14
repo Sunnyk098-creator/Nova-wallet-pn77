@@ -72,10 +72,36 @@ export default async function handler(req, res) {
         }
 
         if (action === 'LOGIN') {
-            const snap = await get(ref(db, `users/${data.phone || ''}`));
-            if (!snap.exists() || snap.val().password !== data.password) throw new Error("Invalid Phone or Password!");
-            if (snap.val().isBanned) throw new Error("Account is Banned.");
-            return res.json({ data: snap.val() });
+            const loginInput = String(data.phone || '').trim().toLowerCase();
+            let userSnap = null;
+            let userPhone = null;
+
+            if (loginInput.includes('@')) {
+                // Email login lookup
+                const usersSnap = await get(ref(db, 'users'));
+                if (usersSnap.exists()) {
+                    usersSnap.forEach(child => {
+                        let u = child.val();
+                        if (u.email && u.email.toLowerCase() === loginInput) {
+                            userSnap = child;
+                            userPhone = child.key;
+                        }
+                    });
+                }
+            } else {
+                // Phone login lookup
+                userSnap = await get(ref(db, `users/${loginInput}`));
+                userPhone = loginInput;
+            }
+
+            if (!userSnap || (typeof userSnap.exists === 'function' && !userSnap.exists()) || userSnap.val().password !== data.password) {
+                throw new Error("Invalid Phone/Email or Password!");
+            }
+            if (userSnap.val().isBanned) throw new Error("Account is Banned.");
+            
+            let userData = userSnap.val();
+            userData.phone = userPhone; // Inject the resolved phone for frontend session
+            return res.json({ data: userData });
         }
 
         if (action === 'REGISTER') {
@@ -125,7 +151,7 @@ export default async function handler(req, res) {
             if (!uSnap.exists()) throw new Error("User not found!");
             const user = uSnap.val();
             let currentBal = Number(user.balance) || 0;
-            const cost = 5; // Fixed cost for all users
+            const cost = 5; 
             if (currentBal < cost) throw new Error("Insufficient Balance for Custom ID!");
             const cidSnap = await get(ref(db, `custom_ids/${normalizedCustomId}`));
             if (cidSnap.exists()) throw new Error("Custom ID already taken!");
@@ -418,7 +444,7 @@ export default async function handler(req, res) {
 
         return res.status(400).json({ error: "Unknown Action" });
     } catch (e) { 
-        if (e.message && e.message.includes("Insufficient") || e.message.includes("not found") || e.message.includes("Password") || e.message.includes("join channel") || e.message.includes("Premium") || e.message.includes("already claimed")) {
+        if (e.message && e.message.includes("Insufficient") || e.message.includes("not found") || e.message.includes("Password") || e.message.includes("join channel") || e.message.includes("Premium") || e.message.includes("already claimed") || e.message.includes("Invalid Phone")) {
             return res.json({ error: e.message });
         }
         return res.status(500).json({ error: "invalid" }); 
