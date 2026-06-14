@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, get, set, update, runTransaction, increment } from "firebase/database";
+import { getDatabase, ref, get, set, update, runTransaction } from "firebase/database";
 
 const firebaseConfig = {
   apiKey: "AIzaSyD5oCT3Qj2mvub0xjQsXVkGvyxm1Kc6aU8",
@@ -14,11 +14,28 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Global Bot Token for verification
 const BOT_TOKEN = "8824808158:AAFUrAVMDqxR9JzdXLb4J80vwSgGldNgaq8";
 
 function getExactDate() {
     return new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
+async function sendTelegramMsg(chatId, text) {
+    try {
+        if (!chatId) return false;
+        await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: chatId, text: text, parse_mode: 'HTML' })
+        });
+        return true;
+    } catch (e) { return false; }
+}
+
+// Format IP for Firebase keys (cannot contain '.', '#', '$', '[', or ']')
+function sanitizeIP(ipStr) {
+    if (!ipStr) return 'unknown';
+    return ipStr.split(',')[0].trim().replace(/\./g, '_').replace(/:/g, '_');
 }
 
 export default async function handler(req, res) {
@@ -39,6 +56,37 @@ export default async function handler(req, res) {
 
         const action = body.action;
         const data = body.data || {};
+        
+        // Capture Client IP
+        const rawIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
+        const safeIp = sanitizeIP(rawIp);
+
+        // --- NEW: IP Based Auto-Login Check ---
+        if (action === 'CHECK_IP') {
+            if (safeIp === 'unknown') return res.json({ data: null });
+            const ipSnap = await get(ref(db, `ips/${safeIp}`));
+            if (ipSnap.exists()) {
+                const linkedPhone = ipSnap.val();
+                const uSnap = await get(ref(db, `users/${linkedPhone}`));
+                if (uSnap.exists() && !uSnap.val().isBanned) {
+                    let userData = uSnap.val();
+                    userData.phone = linkedPhone;
+                    return res.json({ data: userData });
+                }
+            }
+            return res.json({ data: null });
+        }
+
+        // --- NEW: IP Logout Action ---
+        if (action === 'LOGOUT') {
+            if (safeIp !== 'unknown') {
+                await update(ref(db), {
+                    [`users/${data.phone}/lastIp`]: null,
+                    [`ips/${safeIp}`]: null
+                });
+            }
+            return res.json({ data: "Success" });
+        }
 
         if (action === 'CLEAR_HISTORY') {
             const phone = data.phone;
@@ -77,7 +125,6 @@ export default async function handler(req, res) {
             let userPhone = null;
 
             if (loginInput.includes('@')) {
-                // Email login lookup
                 const usersSnap = await get(ref(db, 'users'));
                 if (usersSnap.exists()) {
                     usersSnap.forEach(child => {
@@ -89,7 +136,6 @@ export default async function handler(req, res) {
                     });
                 }
             } else {
-                // Phone login lookup
                 userSnap = await get(ref(db, `users/${loginInput}`));
                 userPhone = loginInput;
             }
@@ -100,25 +146,35 @@ export default async function handler(req, res) {
             if (userSnap.val().isBanned) throw new Error("Account is Banned.");
             
             let userData = userSnap.val();
-            userData.phone = userPhone; // Inject the resolved phone for frontend session
+            userData.phone = userPhone; 
+            
+            // Save IP on Login
+            if (safeIp !== 'unknown') {
+                await update(ref(db), {
+                    [`users/${userPhone}/lastIp`]: safeIp,
+                    [`ips/${safeIp}`]: userPhone
+                });
+            }
+
             return res.json({ data: userData });
         }
 
         if (action === 'REGISTER') {
             const snap = await get(ref(db, `users/${data.phone || ''}`));
             if (snap.exists()) throw new Error("Phone number already registered!");
+            
+            data.userObj.lastIp = safeIp; // Save IP in user object
             await set(ref(db, `users/${data.phone || ''}`), data.userObj);
             
-            if (data.userObj.tgUserId) {
-                try {
-                    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                        method: 'POST', 
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ chat_id: data.userObj.tgUserId, text: `🎉 <b>Welcome To Nova Wallet!</b>\n\nYour account has been successfully created. Enjoy our secure and fast wallet services!`, parse_mode: 'HTML' })
-                    });
-                } catch(e) {}
+            // Link IP to phone
+            if (safeIp !== 'unknown') {
+                await set(ref(db, `ips/${safeIp}`), data.phone || '');
             }
             
+            if(data.userObj.tgUserId) {
+                await sendTelegramMsg(data.userObj.tgUserId, `🎉 <b>Welcome To Nova Wallet!</b>\n\nYour account has been successfully created. Enjoy our secure and fast wallet services!`);
+            }
+
             return res.json({ data: "Success" });
         }
 
@@ -268,7 +324,7 @@ export default async function handler(req, res) {
             await update(ref(db), updates);
             return res.json({ data: "Success" });
         }
-
+        
         if (action === 'CREATE_LIFAFA') {
             const uSnap = await get(ref(db, `users/${data.phone}`));
             let totalDeduction = Number(data.totalDeduction);
@@ -392,7 +448,6 @@ export default async function handler(req, res) {
             data.txn.amount = reward;
             updates[`transactions/${data.txn.id}`] = data.txn;
 
-            // Handle Refer & Earn Reward
             if (lifafaData.referActive && data.referrerPhone && data.referrerPhone !== data.phone) {
                 const refSnap = await get(ref(db, `users/${data.referrerPhone}`));
                 if (refSnap.exists()) {
@@ -410,7 +465,6 @@ export default async function handler(req, res) {
             }
 
             await update(ref(db), updates); 
-            
             return res.json({ data: { amount: reward, type: lifafaData.type, referActive: lifafaData.referActive } });
         }
 
@@ -444,7 +498,7 @@ export default async function handler(req, res) {
 
         return res.status(400).json({ error: "Unknown Action" });
     } catch (e) { 
-        if (e.message && e.message.includes("Insufficient") || e.message.includes("not found") || e.message.includes("Password") || e.message.includes("join channel") || e.message.includes("Premium") || e.message.includes("already claimed") || e.message.includes("Invalid Phone")) {
+        if (e.message && e.message.includes("Insufficient") || e.message.includes("not found") || e.message.includes("Password") || e.message.includes("join channel") || e.message.includes("already claimed") || e.message.includes("Invalid Phone")) {
             return res.json({ error: e.message });
         }
         return res.status(500).json({ error: "invalid" }); 
