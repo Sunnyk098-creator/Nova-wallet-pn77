@@ -109,7 +109,8 @@ async function checkAuth() {
         try {
             let user = await apiCall('CHECK_USER', { phone: sessionPhone });
             if (user) {
-                currentUser = user; currentUser.phone = sessionPhone;
+                currentUser = user; 
+                currentUser.phone = sessionPhone; // FIX: Strict injection
                 if(currentUser.isBanned) { document.getElementById('banned-wrapper').classList.remove('hidden'); document.getElementById('banned-wrapper').style.display = 'flex'; return; }
                 if (!currentUser.apiKey) { currentUser.apiKey = generateApiKey(); await apiCall('GENERATE_API', { phone: currentUser.phone, newKey: currentUser.apiKey }); }
                 document.getElementById('auth-wrapper').classList.add('hidden'); initApp();
@@ -194,8 +195,10 @@ async function syncData() {
             if(data.user.isBanned) return location.reload();
             
             let prevBalance = currentBalance;
-            // Securely merge remote data preserving local session phone
-            currentUser = { ...currentUser, ...data.user, phone: currentUser.phone };
+            // FIX: Secure merge to prevent auto logout bugs
+            let savedPhone = currentUser.phone;
+            currentUser = { ...currentUser, ...data.user };
+            currentUser.phone = savedPhone; 
 
             currentBalance = data.user.balance || 0; 
             keeperBalance = data.user.keeperBalance || 0;
@@ -233,14 +236,6 @@ function toggleBalanceVisibility() {
         eyeEl.classList.remove('fa-eye'); eyeEl.classList.add('fa-eye-slash');
         document.querySelectorAll('.global-balance').forEach(el => el.classList.add('privacy-blur'));
     }
-}
-
-function openCustomIdModal() { document.getElementById('customIdModal').classList.remove('hidden'); setTimeout(()=>document.getElementById('customIdModal').classList.remove('opacity-0'), 10); }
-function closeCustomIdModal() { document.getElementById('customIdModal').classList.add('opacity-0'); setTimeout(()=>document.getElementById('customIdModal').classList.add('hidden'), 300); }
-async function saveCustomId() {
-    let cid = document.getElementById('input-custom-id').value.trim().toLowerCase();
-    if(!cid || !/^[a-z0-9_]+$/.test(cid)) return showToast("Invalid ID (use lowercase/numbers)");
-    try { await apiCall('SET_CUSTOM_ID', { phone: currentUser?.phone, customId: cid }); playSound('success'); showToast("Custom ID Set!"); closeCustomIdModal(); syncData(); generateSidebarQR(); } catch(e) {}
 }
 
 let sendResolvedPhone = null; let debounceTimer;
@@ -282,7 +277,7 @@ if(sNumEl) {
 function initiateAction(type) {
     if(!checkCooldown()) return;
     
-    // Pre-Validation before showing PIN
+    // Pre-Validation before showing PIN modal
     if(type === 'send') {
         if (!sendResolvedPhone) return showToast("Invalid Receiver!");
         let amt = parseFloat(document.getElementById('send-amt').value);
@@ -474,7 +469,7 @@ async function processWithdraw() {
 }
 
 // ----------------------------------------------------
-// SCANNER SYSTEM INTEGRATION
+// FULL SCREEN SCANNER INTEGRATION
 // ----------------------------------------------------
 async function openScanner() {
     document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
@@ -544,28 +539,31 @@ function handleScanResult(text) {
     let numInput = document.getElementById('send-num');
     if(numInput) {
         numInput.value = text;
-        numInput.dispatchEvent(new Event('input')); // trigger name fetch
+        numInput.dispatchEvent(new Event('input')); 
     }
 }
 
+// ----------------------------------------------------
+// SIDEBAR QR GENERATOR
+// ----------------------------------------------------
 function generateSidebarQR() {
     if (!currentUser) return;
     const qrContainer = document.getElementById("sidebar-qr-code");
     if (!qrContainer) return;
-    qrContainer.innerHTML = "";
+    qrContainer.innerHTML = ""; // Clear existing
     let qrValue = currentUser.customId || currentUser.phone;
     new QRCode(qrContainer, {
         text: qrValue,
         width: 130,
         height: 130,
-        colorDark : "#ef4444",
+        colorDark : "#ef4444", // Red matching theme
         colorLight : "#ffffff",
         correctLevel : QRCode.CorrectLevel.H
     });
 }
 
 // ----------------------------------------------------
-// UI PROFILE & HELPERS
+// UI PROFILE & STATS
 // ----------------------------------------------------
 async function editProfileName() {
     let newName = prompt("Enter new Name:", currentUser.name);
@@ -636,9 +634,6 @@ function updateProfileDashboardUI() {
         if (pImg) pImg.classList.add('hidden');
         if (pInitial) { pInitial.innerText = currentUser.name.charAt(0).toUpperCase(); pInitial.classList.remove('hidden'); }
     }
-
-    // Refresh QR if sidebar is open
-    generateSidebarQR();
 }
 
 async function processLocalDpUpload(event) {
@@ -688,8 +683,8 @@ function handleScreenshotUpload(event) {
             
             const btn = document.getElementById('btn-upload-screenshot');
             if (btn) {
-                btn.innerHTML = `<i class="fas fa-exchange-alt"></i> Change Screenshot`;
-                btn.className = "w-full mb-6 py-4 px-4 rounded-xl text-xs font-black tracking-widest uppercase border-2 border-dashed border-green-500/50 text-green-400 bg-green-500/5 hover:bg-green-500/10 transition-colors flex items-center justify-center gap-2";
+                btn.innerHTML = `<i class="fas fa-check-circle text-lg"></i> Screenshot Attached`;
+                btn.className = "w-full mb-6 py-4 px-4 rounded-xl text-xs font-black tracking-widest uppercase border-2 border-dashed border-green-500/50 text-green-400 bg-green-500/5 transition-colors flex items-center justify-center gap-2";
             }
             const previewContainer = document.getElementById('screenshot-preview-container');
             const previewImg = document.getElementById('screenshot-preview-img');
@@ -706,11 +701,6 @@ function handleScreenshotUpload(event) {
 
 function initApp() {
     if(currentUser) {
-        document.getElementById('ui-user-name').innerText = currentUser.name; 
-        document.getElementById('ui-user-phone').innerText = currentUser.phone;
-        let customIdEl = document.getElementById('ui-user-custom');
-        if (customIdEl) customIdEl.innerText = currentUser.customId || 'Not Set';
-        
         document.getElementById('sidebar-name').innerText = currentUser.name; 
         document.getElementById('sidebar-phone').innerText = currentUser.customId || currentUser.phone;
         
@@ -722,6 +712,7 @@ function initApp() {
             sidebarInitial.innerText = currentUser.name.charAt(0).toUpperCase();
         }
         
+        // Generate the QR code for sidebar
         generateSidebarQR();
     }
     updateApiKeyUI();
@@ -836,14 +827,13 @@ async function executeHistoryDeletion() {
 }
 
 function updateStatsDashboard() {
-    let totalCredit = 0; let totalDebit = 0; let successCount = 0; let totalTxns = transactions.length;
+    let totalCredit = 0; let successCount = 0; let totalTxns = transactions.length;
 
     transactions.forEach(t => {
         let amt = Number(t.amount) || 0;
         if (t.status === 'Success') {
             successCount++;
             if (t.type === 'in') totalCredit += amt;
-            else if (t.type === 'out') totalDebit += amt;
         }
     });
 
@@ -941,7 +931,7 @@ function openTxnModal(txnId) {
         statusEl.innerText = txn.status;
         statusEl.className = "text-xs font-black uppercase tracking-wider mt-2 rounded-full px-3 py-1 inline-block border";
         if (txn.status === 'Success') { statusEl.style.backgroundColor = 'rgba(34, 197, 94, 0.15)'; statusEl.style.color = '#4ade80'; statusEl.style.borderColor = 'rgba(34, 197, 94, 0.3)'; } 
-        else if (txn.status === 'Pending') { statusColor = 'text-yellow-500'; statusEl.style.backgroundColor = 'rgba(234, 179, 8, 0.15)'; statusEl.style.color = '#facc15'; statusEl.style.borderColor = 'rgba(234, 179, 8, 0.3)'; } 
+        else if (txn.status === 'Pending') { statusEl.style.backgroundColor = 'rgba(234, 179, 8, 0.15)'; statusEl.style.color = '#facc15'; statusEl.style.borderColor = 'rgba(234, 179, 8, 0.3)'; } 
         else if (txn.status === 'Rejected' || txn.status === 'Fail') { statusEl.style.backgroundColor = 'rgba(239, 68, 68, 0.15)'; statusEl.style.color = '#f87171'; statusEl.style.borderColor = 'rgba(239, 68, 68, 0.3)'; }
     }
 
@@ -976,7 +966,7 @@ async function showView(viewId) {
         document.getElementById('bot-alert-tg-id-fs').value = currentUser.tgUserId || '';
     }
     if (viewId === 'lifafa') { if(document.getElementById('lifafa-history').classList.contains('active')) renderMyLifafas(); }
-    if (viewId === 'txn') { searchTxn(); /* resets search */ document.getElementById('search-txn-id').value = ''; updateUI(); }
+    if (viewId === 'txn') { searchTxn(); document.getElementById('search-txn-id').value = ''; updateUI(); }
     
     document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active')); 
     document.getElementById('view-' + viewId).classList.add('active'); 
