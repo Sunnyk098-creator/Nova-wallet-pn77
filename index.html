@@ -18,7 +18,7 @@
         })();
     </script>
 </head>
-<body class="font-sans pb-20 text-contrast transition-all duration-500">
+<body class="font-sans pb-20 text-contrast transition-all duration-500 relative">
 
     <div id="rocket-overlay" class="fixed inset-0 z-[9999] paytm-receipt-bg hidden flex-col items-center justify-center transition-opacity">
         <div class="rocket-ground"></div>
@@ -242,7 +242,7 @@
     </div>
 
     <main id="app-container">
-        <div id="view-home" class="view-section active">
+        <div id="view-home" class="view-section active relative z-10">
             <header class="flex justify-between items-center p-4 theme-card shadow-sm sticky top-0 z-30">
                 <button onclick="toggleSidebar()" class="text-xl hover:text-red-500 transition-colors accent-text anim-menu-icon"><i class="fas fa-bars"></i></button>
                 <h1 class="text-xl font-black tracking-widest accent-text italic">NOVA WALLET</h1>
@@ -253,20 +253,18 @@
             </header>
 
             <div class="p-4">
-                <div id="home-main-card" class="rounded-3xl p-6 relative overflow-hidden transform hover:scale-[1.02] transition-all duration-300 mb-4">
+                <div id="home-main-card" class="rounded-3xl p-6 relative overflow-hidden transform hover:scale-[1.02] transition-all duration-300 mb-6">
                     <div class="flex justify-between items-start mb-4 relative z-10 w-full">
                         <div class="flex items-center gap-2 text-white/90">
                             <i class="fas fa-wallet"></i>
                             <span class="text-xs font-black tracking-widest uppercase">AVAILABLE BALANCE</span>
                         </div>
                     </div>
-
                     <div class="flex items-center gap-1 mb-6 relative z-10">
                         <span class="text-2xl font-bold">₹</span>
                         <h3 class="text-5xl font-black tracking-tight global-balance transition-all duration-300">0.00</h3>
                         <i class="fas fa-eye-slash text-white/60 ml-2 text-lg cursor-pointer hover:text-white transition-all" id="eye-balance" onclick="toggleBalanceVisibility()"></i>
                     </div>
-
                     <div class="grid grid-cols-2 gap-3 relative z-10">
                         <div class="bal-inner-box flex flex-col gap-1">
                             <span class="text-[9px] uppercase tracking-wider text-white/70 font-bold">PHONE</span>
@@ -299,53 +297,46 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4 mt-6 mb-6">
-                    <div class="stat-square cursor-pointer" onclick="handleSecretDeleteHistoryTap()">
-                        <div class="stat-icon-wrapper"><i class="fas fa-arrow-trend-up"></i></div>
-                        <div>
-                            <div id="home-stats-credit" class="text-xl font-black text-white mb-1 tracking-tight">₹0.00</div>
-                            <div class="text-[10px] font-bold tracking-widest text-gray-500 uppercase">Total Credit</div>
-                        </div>
+                <div class="grid grid-cols-2 gap-4 mt-2 mb-6">
+                    <div class="stat-rect cursor-pointer" onclick="handleSecretDeleteHistoryTap()">
+                        <p class="text-[10px] font-black tracking-widest text-gray-500 uppercase mb-1">Earning</p>
+                        <div id="home-stats-credit" class="text-xl font-black text-contrast tracking-tight">₹0.00</div>
                     </div>
-                    <div class="stat-square">
-                        <div class="stat-icon-wrapper"><i class="fas fa-check-circle"></i></div>
-                        <div>
-                            <div id="home-stats-count" class="text-xl font-black text-white mb-1 tracking-tight">0</div>
-                            <div class="text-[10px] font-bold tracking-widest text-gray-500 uppercase">Successful</div>
-                        </div>
+                    <div class="stat-rect">
+                        <p class="text-[10px] font-black tracking-widest text-gray-500 uppercase mb-1">Success Rate</p>
+                        <div id="home-stats-rate" class="text-xl font-black text-contrast tracking-tight">100%</div>
                     </div>
-                    <div class="stat-square">
-                        <div class="stat-icon-wrapper"><i class="fas fa-receipt"></i></div>
-                        <div>
-                            <div id="home-stats-count-total" class="text-xl font-black text-white mb-1 tracking-tight">0</div>
-                            <div class="text-[10px] font-bold tracking-widest text-gray-500 uppercase">Total Txns</div>
-                        </div>
-                    </div>
-                    <div class="stat-square">
-                        <div class="stat-icon-wrapper"><i class="fas fa-percent"></i></div>
-                        <div>
-                            <div id="home-stats-rate" class="text-xl font-black text-white mb-1 tracking-tight">100%</div>
-                            <div class="text-[10px] font-bold tracking-widest text-gray-500 uppercase">Success Rate</div>
-                        </div>
-                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mx-1 mb-8" id="grid-container-actions">
+                    <button onclick="showView('send')" class="sq-action-btn anim-send btn-animate">
+                        <div class="sq-icon-wrap icon-bg-blue"><i class="fas fa-paper-plane"></i></div>
+                        <span class="text-xs font-black tracking-wide text-contrast">Send</span>
+                    </button>
+                    <button onclick="showView('bulk')" class="sq-action-btn anim-bulk btn-animate">
+                        <div class="sq-icon-wrap icon-bg-purple"><i class="fas fa-users"></i></div>
+                        <span class="text-xs font-black tracking-wide text-contrast">Bulk</span>
+                    </button>
+                    <button onclick="showView('lifafa')" class="sq-action-btn anim-lifafa btn-animate">
+                        <div class="sq-icon-wrap icon-bg-orange"><i class="fas fa-envelope-open-text"></i></div>
+                        <span class="text-xs font-black tracking-wide text-contrast">Lifafa</span>
+                    </button>
+                    <button onclick="showView('gift')" class="sq-action-btn anim-gift btn-animate">
+                        <div class="sq-icon-wrap icon-bg-pink"><i class="fas fa-gift"></i></div>
+                        <span class="text-xs font-black tracking-wide text-contrast">Giftcode</span>
+                    </button>
+                    <button onclick="showView('api')" class="sq-action-btn anim-api btn-animate">
+                        <div class="sq-icon-wrap icon-bg-cyan"><i class="fas fa-code"></i></div>
+                        <span class="text-xs font-black tracking-wide text-contrast">API System</span>
+                    </button>
+                    <button onclick="showView('keeper')" class="sq-action-btn anim-keeper btn-animate">
+                        <div class="sq-icon-wrap icon-bg-green"><i class="fas fa-vault"></i></div>
+                        <span class="text-xs font-black tracking-wide text-contrast">Keeper</span>
+                    </button>
                 </div>
             </div>
 
-            <div class="theme-card rounded-3xl pt-4 px-4 pb-4 shadow-sm mt-2 border border-gray-100 mx-4 mb-4">
-                <div class="grid grid-cols-4 gap-y-6 gap-x-2" id="grid-container-actions">
-                    <button onclick="showView('send')" class="col-send anim-send btn-animate flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-full bg-gray-50 theme-card flex items-center justify-center text-xl shadow-md border border-gray-100 color-send hover:shadow-lg transition-all"><i class="fas fa-paper-plane"></i></div><span class="text-[10px] font-bold text-gray-600">Send</span></button>
-                    <button onclick="showView('bulk')" class="col-bulk anim-bulk btn-animate flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-full bg-gray-50 theme-card flex items-center justify-center text-xl shadow-md border border-gray-100 color-bulk hover:shadow-lg transition-all"><i class="fas fa-users"></i></div><span class="text-[10px] font-bold text-gray-600">Bulk</span></button>
-                    <button onclick="showView('add')" class="col-add anim-add btn-animate flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-full bg-gray-50 theme-card flex items-center justify-center text-xl shadow-md border border-gray-100 color-add hover:shadow-lg transition-all"><i class="fas fa-plus"></i></div><span class="text-[10px] font-bold text-gray-600 font-bold">Add</span></button>
-                    <button onclick="showView('withdraw')" class="col-withdraw anim-withdraw btn-animate flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-full bg-gray-50 theme-card flex items-center justify-center text-xl shadow-md border border-gray-100 color-withdraw hover:shadow-lg transition-all"><i class="fas fa-arrow-up"></i></div><span class="text-[10px] font-bold text-gray-600">Withdraw</span></button>
-                    
-                    <button onclick="showView('lifafa')" class="col-lifafa anim-lifafa btn-animate flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-full bg-gray-50 theme-card flex items-center justify-center text-xl shadow-md border border-gray-100 color-lifafa hover:shadow-lg transition-all"><i class="fas fa-envelope-open-text"></i></div><span class="text-[10px] font-bold text-gray-600">Lifafa</span></button>
-                    <button onclick="showView('gift')" class="col-gift anim-gift btn-animate flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-full bg-gray-50 theme-card flex items-center justify-center text-xl shadow-md border border-gray-100 color-gift hover:shadow-lg transition-all"><i class="fas fa-gift"></i></div><span class="text-[10px] font-bold text-gray-600">Gift Code</span></button>
-                    <button onclick="showView('api')" class="col-api anim-api btn-animate flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-full bg-gray-50 theme-card flex items-center justify-center text-xl shadow-md border border-gray-100 color-api hover:shadow-lg transition-all"><i class="fas fa-code"></i></div><span class="text-[10px] font-bold text-gray-600 font-bold">API Keys</span></button>
-                    <button onclick="showView('keeper')" class="col-keeper anim-keeper btn-animate flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-full bg-gray-50 theme-card flex items-center justify-center text-xl shadow-md border border-gray-100 color-api hover:shadow-lg transition-all"><i class="fas fa-vault"></i></div><span class="text-[10px] font-bold text-gray-600 font-bold">Keeper</span></button>
-                </div>
-            </div>
-
-            <div class="px-4 mt-6 pb-4 font-bold">
+            <div class="px-4 pb-4 font-bold relative z-10">
                 <div class="flex justify-between items-end mb-4">
                     <h3 class="font-black text-sm tracking-wide">Recent Transactions</h3>
                 </div>
@@ -732,82 +723,14 @@
             </div>
         </div>
 
-        <div id="view-game" class="view-section min-h-screen theme-card font-bold">
-            <header class="flex items-center p-4 shadow-sm sticky top-0 z-30 theme-card">
-                <button onclick="showView('home')" class="w-8 h-8 flex items-center justify-center text-slate-800 dark:text-white rounded-full"><i class="fas fa-arrow-left"></i></button>
-                <h1 class="ml-4 text-[16px] font-black tracking-wide text-contrast"><i class="fas fa-chart-line text-sm mr-1.5 accent-text"></i> WALLET STATISTICS</h1>
-            </header>
-            <div class="p-4">
-                <div class="grid grid-cols-2 gap-4 mb-6">
-                    <div class="theme-card p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-28 bg-gradient-to-br from-green-500/10 to-transparent cursor-pointer" onclick="handleSecretDeleteHistoryTap()">
-                        <div class="text-[10px] font-black tracking-wider text-gray-400">TOTAL CREDIT</div>
-                        <div id="stats-total-credit" class="text-xl font-black text-green-500 font-black">₹0.00</div>
-                    </div>
-                    <div class="theme-card p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-28 bg-gradient-to-br from-red-500/10 to-transparent">
-                        <div class="text-[10px] font-black tracking-wider text-gray-400">TOTAL DEBIT</div>
-                        <div id="stats-total-debit" class="text-xl font-black text-red-500 font-black">₹0.00</div>
-                    </div>
-                    <div class="theme-card p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-28 bg-gradient-to-br from-blue-500/10 to-transparent">
-                        <div class="text-[10px] font-black tracking-wider text-gray-400 font-bold">NO OF TRANSACTIONS</div>
-                        <div id="stats-no-of-txns" class="text-xl font-black text-blue-500 font-black">0</div>
-                    </div>
-                    <div class="theme-card p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-28 bg-gradient-to-br from-amber-500/10 to-transparent">
-                        <div class="text-[10px] font-black tracking-wider text-gray-400 font-bold">SUCCESS RATE</div>
-                        <div id="stats-success-rate" class="text-xl font-black text-amber-500 font-black">100%</div>
-                    </div>
-                </div>
-
-                <div class="theme-card rounded-3xl p-5 border border-gray-100 shadow-sm mb-6">
-                    <div class="flex justify-between items-center mb-3">
-                        <h4 class="text-xs font-black tracking-wider text-gray-400 uppercase font-bold">Search & Filter</h4>
-                        <button onclick="clearStatsFilters()" class="text-[10px] font-bold accent-text hover:underline">RESET</button>
-                    </div>
-                    
-                    <div class="relative mb-3 font-semibold">
-                        <span class="absolute left-3 top-3.5 text-gray-400 text-xs"><i class="fas fa-search"></i></span>
-                        <input type="text" id="stats-search-input" oninput="filterStatsTransactions()" placeholder="Search by recipient, UTR, or comment..." class="w-full bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-4 py-3 text-xs focus:outline-none focus-accent transition-colors theme-card font-black">
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-[9px] font-bold text-gray-400 mb-1 uppercase tracking-wider font-bold">Status</label>
-                            <select id="stats-status-filter" onchange="filterStatsTransactions()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs focus-accent theme-card font-black font-semibold">
-                                <option value="all">All Statuses</option>
-                                <option value="Success">Success</option>
-                                <option value="Pending">Pending</option>
-                                <option value="Fail">Fail</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[9px] font-bold text-gray-400 mb-1 uppercase tracking-wider font-bold font-bold">Type</label>
-                            <select id="stats-type-filter" onchange="filterStatsTransactions()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs focus-accent theme-card font-black font-semibold font-bold">
-                                <option value="all">All Types</option>
-                                <option value="Received">Received</option>
-                                <option value="Credit">Credit</option>
-                                <option value="Debit">Debit</option>
-                                <option value="Api">API Payment</option>
-                                <option value="Withdraw">Withdrawal</option>
-                                <option value="Taxes">Taxes/Fees</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mb-4 text-left px-1 font-bold">
-                    <h3 class="font-black text-xs tracking-wider text-gray-400 uppercase">Filtered History</h3>
-                </div>
-                <div id="stats-txn-list" class="theme-card rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col mb-16 font-semibold"></div>
-            </div>
-        </div>
-
         <div id="view-myprofile" class="view-section min-h-screen theme-card font-bold">
-            <header class="flex items-center p-4 sticky top-0 z-30 border-b border-gray-100 theme-card">
-                <button onclick="showView('home')" class="w-8 h-8 hover:bg-gray-100 text-slate-800 dark:text-white rounded-full flex items-center justify-center shadow-sm"><i class="fas fa-arrow-left text-gray-700 dark:text-white"></i></button>
+            <header class="flex items-center p-4 sticky top-0 z-30 border-b border-gray-800 theme-card">
+                <button onclick="showView('home')" class="w-8 h-8 hover:bg-gray-800 text-white rounded-full flex items-center justify-center shadow-sm transition-colors"><i class="fas fa-arrow-left"></i></button>
                 <h1 class="ml-4 text-[16px] font-black tracking-wide text-contrast"><i class="fas fa-user-circle mr-1.5 text-sm accent-text"></i> MY PROFILE</h1>
             </header>
             <div class="p-6 flex flex-col items-center">
                 <div class="relative w-28 h-28 mx-auto mb-4 group cursor-pointer" onclick="document.getElementById('profile-dp-input').click()">
-                    <div class="w-full h-full rounded-full overflow-hidden border-4 border-red-500 shadow-xl relative bg-gray-100 flex items-center justify-center">
+                    <div class="w-full h-full rounded-full overflow-hidden border-4 border-red-500 shadow-xl relative bg-gray-900 flex items-center justify-center">
                         <img id="profile-dashboard-dp" src="" class="w-full h-full object-cover hidden" alt="Profile Picture">
                         <span id="profile-dashboard-initial" class="text-4xl font-black accent-text uppercase font-black">U</span>
                         
@@ -821,61 +744,48 @@
                 
                 <h2 class="font-black text-xl mt-2 mb-1 text-contrast flex items-center gap-2 font-black">
                     <span id="profile-display-name">User Name</span>
-                    <i class="fas fa-edit text-xs text-gray-400 cursor-pointer hover:text-red-500" onclick="editProfileName()"></i>
+                    <i class="fas fa-edit text-xs text-gray-500 cursor-pointer hover:text-red-500 transition-colors" onclick="editProfileName()"></i>
                 </h2>
-                <span class="text-[10px] uppercase font-black tracking-widest text-gray-500 bg-gray-100 px-3 py-1 rounded-full border border-gray-200">Standard Member</span>
+                <span class="text-[10px] uppercase font-black tracking-widest text-red-500 bg-red-500/10 px-3 py-1 rounded-full border border-red-500/20">Standard Member</span>
 
-                <div class="w-full max-w-sm mt-8 space-y-3 text-left font-medium">
-                    <div class="theme-card p-4 rounded-2xl border border-gray-100 shadow-sm flex justify-between items-center">
-                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-wider">Email Address</span>
-                        <span id="profile-lbl-email" class="font-bold text-sm text-contrast font-mono">...</span>
-                    </div>
-                    <div class="theme-card p-4 rounded-2xl border border-gray-100 shadow-sm flex justify-between items-center">
-                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-wider">Telegram UserID</span>
-                        <span id="profile-lbl-tg" class="font-bold text-sm text-blue-500 font-mono">Not Linked</span>
-                    </div>
-                    <div class="theme-card p-4 rounded-2xl border border-gray-100 shadow-sm flex justify-between items-center">
-                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-wider">Mobile Number</span>
-                        <span id="profile-lbl-phone" class="font-bold text-sm text-contrast font-mono">...</span>
-                    </div>
-                    <div class="theme-card p-4 rounded-2xl border border-gray-100 shadow-sm flex justify-between items-center">
-                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-wider">Security PIN</span>
-                        <span id="profile-lbl-pin" class="font-black text-sm text-contrast font-mono tracking-widest">****</span>
-                    </div>
-                    <div class="theme-card p-4 rounded-2xl border border-gray-100 shadow-sm flex justify-between items-center font-bold">
-                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-wider">Total Balance</span>
-                        <span class="accent-text font-black text-sm font-black font-black">₹<span class="global-balance blur-none">0.00</span></span>
+                <div class="profile-pill" id="profile-lbl-phone-pill">...</div>
+
+                <div class="w-full max-w-sm mt-8 theme-card p-5 rounded-2xl border border-gray-800 shadow-lg">
+                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-3">Update Email ID</p>
+                    <div class="flex gap-2">
+                        <input type="email" id="profile-edit-email" placeholder="Enter new email" class="flex-1 bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm focus-accent text-white">
+                        <button onclick="updateProfileEmail()" class="accent-bg text-white px-5 rounded-xl font-black text-sm shadow-md transition-transform hover:scale-105"><i class="fas fa-save"></i></button>
                     </div>
                 </div>
 
-                <div class="w-full max-w-sm mt-6 grid grid-cols-2 gap-4 pb-8">
-                    <div class="theme-card p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-24 bg-gradient-to-br from-green-500/10 to-transparent">
-                        <div class="text-[10px] font-black tracking-wider text-gray-400">TOTAL CREDIT</div>
-                        <div id="prof-stats-total-credit" class="text-lg font-black text-green-500 font-black">₹0.00</div>
+                <div class="w-full max-w-sm mt-6 theme-card p-5 rounded-2xl border border-gray-800 shadow-lg space-y-4">
+                    <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-wider">Account Status</span>
+                        <span class="font-bold text-xs text-green-500 bg-green-500/10 px-2 py-1 rounded-md"><i class="fas fa-check-circle mr-1"></i> Verified</span>
                     </div>
-                    <div class="theme-card p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-24 bg-gradient-to-br from-red-500/10 to-transparent">
-                        <div class="text-[10px] font-black tracking-wider text-gray-400">TOTAL DEBIT</div>
-                        <div id="prof-stats-total-debit" class="text-lg font-black text-red-500 font-black">₹0.00</div>
+                    <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-wider">Joined Date</span>
+                        <span class="font-bold text-xs text-gray-300" id="profile-lbl-joined">Loading...</span>
                     </div>
-                    <div class="theme-card p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-24 bg-gradient-to-br from-blue-500/10 to-transparent">
-                        <div class="text-[10px] font-black tracking-wider text-gray-400 font-bold">NO OF TXNS</div>
-                        <div id="prof-stats-no-of-txns" class="text-lg font-black text-blue-500 font-black">0</div>
+                    <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-wider">Security PIN</span>
+                        <span id="profile-lbl-pin" class="font-black text-sm text-contrast font-mono tracking-widest">****</span>
                     </div>
-                    <div class="theme-card p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-24 bg-gradient-to-br from-amber-500/10 to-transparent">
-                        <div class="text-[10px] font-black tracking-wider text-gray-400 font-bold">SUCCESS RATE</div>
-                        <div id="prof-stats-success-rate" class="text-lg font-black text-amber-500 font-black">100%</div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-wider">Telegram UserID</span>
+                        <span id="profile-lbl-tg" class="font-bold text-xs text-blue-400 font-mono">Not Linked</span>
                     </div>
                 </div>
             </div>
         </div>
     </main>
 
-    <nav class="fixed bottom-0 left-0 w-full theme-card shadow-[0_-10px_30px_rgba(0,0,0,0.05)] border-t border-gray-100 z-30 pb-safe transition-colors">
+    <nav class="fixed bottom-0 left-0 w-full theme-card shadow-[0_-10px_30px_rgba(0,0,0,0.05)] border-t border-gray-800 z-30 pb-safe transition-colors">
         <div class="flex justify-between items-center px-6 py-2">
             <a href="#" onclick="showView('send')" class="nav-item flex flex-col items-center gap-1 text-gray-400 hover:text-red-500 pt-2 pb-1 anim-send"><i class="fas fa-paper-plane text-xl btn-animate"></i></a>
             <a href="#" onclick="showView('gift')" class="nav-item flex flex-col items-center gap-1 text-gray-400 hover:text-red-500 pt-2 pb-1 anim-gift"><i class="fas fa-gift text-xl btn-animate"></i></a>
             <a href="#" onclick="showView('home')" class="relative -top-6 group anim-nav-home">
-                <div class="w-16 h-16 accent-bg text-white rounded-full flex items-center justify-center shadow-lg border-4 theme-card"><i class="fas fa-home text-2xl"></i></div>
+                <div class="w-16 h-16 accent-bg text-white rounded-full flex items-center justify-center shadow-lg border-4 border-gray-900"><i class="fas fa-home text-2xl"></i></div>
             </a>
             <a href="#" onclick="showView('add')" class="nav-item flex flex-col items-center gap-1 text-gray-400 hover:text-red-500 pt-2 pb-1 anim-add"><i class="fas fa-plus-circle text-xl btn-animate"></i></a>
             <a href="#" onclick="showView('myprofile')" class="nav-item flex flex-col items-center gap-1 text-gray-400 hover:text-red-500 pt-2 pb-1 anim-profile"><i class="fas fa-user text-xl btn-animate"></i></a>
@@ -883,38 +793,28 @@
     </nav>
 
     <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-60 z-40 hidden transition-opacity backdrop-blur-sm" onclick="toggleSidebar()"></div>
-    <div id="sidebar" class="fixed top-0 left-0 w-64 h-full theme-card shadow-2xl z-50 transform -translate-x-full transition-transform flex flex-col">
+    <div id="sidebar" class="fixed top-0 left-0 w-64 h-full theme-card shadow-2xl z-50 transform -translate-x-full transition-transform flex flex-col border-r border-gray-800">
         <div class="p-6 accent-bg text-white flex justify-between items-center shadow-md">
-            <h2 class="text-2xl font-black tracking-wider flex items-center gap-2"><i class="fas fa-wallet animate-pulse"></i> PROFILE</h2><button onclick="toggleSidebar()" class="hover:rotate-90 transition-transform"><i class="fas fa-times text-xl"></i></button>
+            <h2 class="text-2xl font-black tracking-wider flex items-center gap-2"><i class="fas fa-wallet animate-pulse"></i> MENU</h2><button onclick="toggleSidebar()" class="hover:rotate-90 transition-transform"><i class="fas fa-times text-xl"></i></button>
         </div>
-        <div class="p-6 text-center border-b border-gray-100 flex flex-col items-center relative sidebar-profile-bg theme-card">
+        <div class="p-6 text-center border-b border-gray-800 flex flex-col items-center relative sidebar-profile-bg theme-card">
             <h3 class="font-black text-lg" id="sidebar-name">User Name</h3>
             <p class="text-xs accent-text font-bold tracking-widest font-mono" id="sidebar-phone">Phone</p>
         </div>
         <div class="flex-1 overflow-y-auto py-4 theme-card">
             <ul class="space-y-1">
-                <li><a href="#" onclick="showView('myprofile'); toggleSidebar()" class="block px-6 py-3 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors font-semibold"><i class="fas fa-user-circle w-6"></i> My Profile</a></li>
-                <li><a href="#" onclick="showView('api'); toggleSidebar()" class="block px-6 py-3 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors font-semibold"><i class="fas fa-code w-6"></i> API System</a></li>
-                <li><a href="#" onclick="showAuthView('reset-pin'); document.getElementById('auth-wrapper').classList.remove('hidden'); toggleSidebar()" class="block px-6 py-3 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors font-semibold"><i class="fas fa-key w-6"></i> Change Security PIN</a></li>
-                <li><a href="#" onclick="showView('botalert'); toggleSidebar()" class="block px-6 py-3 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors font-semibold"><i class="fas fa-robot w-6"></i> Bot Alert Settings</a></li>
-                <li><a href="#" onclick="window.open('https://t.me/ownerxnovapay', '_blank'); toggleSidebar()" class="block px-6 py-3 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors font-semibold"><i class="fas fa-headset w-6"></i> Support Section</a></li>
+                <li><a href="#" onclick="showView('myprofile'); toggleSidebar()" class="block px-6 py-3 hover:bg-gray-800 transition-colors font-semibold"><i class="fas fa-user-circle w-6"></i> My Profile</a></li>
+                <li><a href="#" onclick="showView('api'); toggleSidebar()" class="block px-6 py-3 hover:bg-gray-800 transition-colors font-semibold"><i class="fas fa-code w-6"></i> API System</a></li>
+                <li><a href="#" onclick="showAuthView('reset-pin'); document.getElementById('auth-wrapper').classList.remove('hidden'); toggleSidebar()" class="block px-6 py-3 hover:bg-gray-800 transition-colors font-semibold"><i class="fas fa-key w-6"></i> Change Security PIN</a></li>
+                <li><a href="#" onclick="showView('botalert'); toggleSidebar()" class="block px-6 py-3 hover:bg-gray-800 transition-colors font-semibold"><i class="fas fa-robot w-6"></i> Bot Alert Settings</a></li>
+                <li><a href="#" onclick="window.open('https://t.me/ownerxnovapay', '_blank'); toggleSidebar()" class="block px-6 py-3 hover:bg-gray-800 transition-colors font-semibold"><i class="fas fa-headset w-6"></i> Support Section</a></li>
                 
-                <li><div class="h-px bg-gray-100 dark:bg-gray-800 my-2 mx-4 font-bold"></div></li>
-                <li><a href="#" onclick="logoutUser()" class="block px-6 py-3 text-red-500 hover:bg-red-50 dark:hover:bg-red-950 transition-colors font-semibold"><i class="fas fa-sign-out-alt w-6"></i> Logout</a></li>
+                <li><div class="h-px bg-gray-800 my-2 mx-4 font-bold"></div></li>
+                <li><a href="#" onclick="logoutUser()" class="block px-6 py-3 text-red-500 hover:bg-red-900/20 transition-colors font-semibold"><i class="fas fa-sign-out-alt w-6"></i> Logout</a></li>
             </ul>
         </div>
     </div>
 
     <script src="script.js"></script>
-    <script>
-        setInterval(() => {
-            const emailEl = document.getElementById('ui-user-email');
-            if (emailEl && window.currentUser && window.currentUser.email) {
-                if(emailEl.innerText !== window.currentUser.email) {
-                    emailEl.innerText = window.currentUser.email;
-                }
-            }
-        }, 1000);
-    </script>
 </body>
 </html>
