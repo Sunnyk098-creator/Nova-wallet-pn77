@@ -112,10 +112,11 @@ async function checkAuth() {
 }
 
 async function processLogin() {
-    let phone = document.getElementById('login-phone').value; let pass = document.getElementById('login-pass').value;
+    let loginCredential = document.getElementById('login-phone').value.trim(); 
+    let pass = document.getElementById('login-pass').value;
     try { 
-        let user = await apiCall('LOGIN', { phone, password: pass }); 
-        localStorage.setItem('novaSession', phone); currentUser = user; currentUser.phone = phone; 
+        let user = await apiCall('LOGIN', { phone: loginCredential, password: pass }); 
+        localStorage.setItem('novaSession', user.phone); currentUser = user; 
         if (!currentUser.apiKey) { currentUser.apiKey = generateApiKey(); await apiCall('GENERATE_API', { phone: currentUser.phone, newKey: currentUser.apiKey }); } 
         document.getElementById('auth-wrapper').classList.add('hidden'); initApp(); 
     } catch(e) {}
@@ -1466,19 +1467,6 @@ function switchLifafaTab(tabId) {
     if (tabId === 'lifafa-history') renderMyLifafas();
 }
 function switchKeeperTab(tabId) { document.querySelectorAll('.keeper-tab-btn').forEach(btn => btn.classList.remove('active')); document.querySelectorAll('.keeper-tab-content').forEach(c => c.classList.remove('active')); document.getElementById('btn-'+tabId).classList.add('active'); document.getElementById(tabId).classList.add('active'); }
-
-function searchTxn() {
-    let tid = document.getElementById('search-txn-id').value.trim().toUpperCase();
-    if(!tid) return showToast("Enter Transaction ID");
-    
-    let txn = transactions.find(t => t.id === tid);
-    if(txn) {
-        openTxnModal(txn.id);
-        document.getElementById('search-txn-id').value = '';
-    } else {
-        showToast("Transaction not found in your history.");
-    }
-}
 
 window.onload = async () => {
     await checkAuth();
