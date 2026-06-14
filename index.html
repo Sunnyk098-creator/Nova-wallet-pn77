@@ -3,44 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lion Pay Wallet App</title>
+    <title>Nova Wallet</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
     <link rel="stylesheet" href="style.css">
 
     <script>
         (function() {
-            let savedTheme = localStorage.getItem('lp_theme') || 'dark';
-            let savedColor = localStorage.getItem('lp_color') || '#ef4444'; 
-            let savedPremium = localStorage.getItem('lp_premiumUI') === 'true';
-            let savedColorful = localStorage.getItem('lp_colorful') === 'true';
-            let savedNeon = localStorage.getItem('lp_neon') === 'true';
-            let savedIdleAnim = localStorage.getItem('lp_idle_anim') === 'true';
-
-            document.documentElement.classList.add('dark-mode'); // Forced Dark
-            
-            if(savedPremium) document.documentElement.classList.add('premium-mode');
-            if(savedColorful) document.documentElement.classList.add('colorful-mode');
-            if(savedNeon && savedPremium) document.documentElement.classList.add('neon-mode');
-            if(savedIdleAnim) document.documentElement.classList.add('idle-anim-on');
-
-            function hexToRgba(hex, alpha) {
-                let r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
-                return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-            }
-
-            document.documentElement.style.setProperty('--accent-main', '#ef4444'); // Forced Red
-            document.documentElement.style.setProperty('--accent-glow', hexToRgba('#ef4444', 0.4));
-            document.documentElement.style.setProperty('--premium-grad-1', hexToRgba('#ef4444', 0.15));
-            document.documentElement.style.setProperty('--premium-grad-2', hexToRgba('#ef4444', 0.05));
+            // Force Dark Mode and Nova Red Theme natively
+            document.documentElement.classList.add('dark-mode');
+            localStorage.setItem('lp_theme', 'dark');
+            localStorage.setItem('lp_color', '#ef4444');
+            document.documentElement.style.setProperty('--accent-main', '#ef4444');
+            document.documentElement.style.setProperty('--accent-glow', 'rgba(239, 68, 68, 0.4)');
         })();
     </script>
 </head>
 <body class="font-sans pb-20 text-contrast transition-all duration-500">
-
-    <div id="splash-screen" class="fixed inset-0 bg-white z-[99999] flex flex-col items-center justify-center transition-opacity duration-500 hidden">
-    </div>
 
     <div id="rocket-overlay" class="fixed inset-0 z-[9999] paytm-receipt-bg hidden flex-col items-center justify-center transition-opacity">
         <div class="rocket-ground"></div>
@@ -53,22 +36,22 @@
     <div id="txn-result-overlay" class="fixed inset-0 z-[9998] paytm-receipt-bg hidden flex-col items-center p-6 text-center overflow-y-auto">
         <div class="w-full flex justify-between items-center pt-4 mb-2">
             <span class="text-xs font-black tracking-widest text-gray-400 uppercase">Transaction Details</span>
-            <button onclick="closeSuccessOverlay()" class="text-gray-400 hover:text-gray-800 dark:hover:text-white transition-colors"><i class="fas fa-times text-2xl"></i></button>
+            <button onclick="closeSuccessOverlay()" class="text-gray-400 hover:text-white transition-colors"><i class="fas fa-times text-2xl"></i></button>
         </div>
         
         <div id="txn-result-icon-bg" class="w-20 h-20 rounded-full flex items-center justify-center text-4xl mb-4 shadow-inner animate-[slideDown_0.5s_ease-out]">
             <i id="txn-result-icon" class="fas fa-check"></i>
         </div>
         
-        <h2 id="txn-result-title" class="text-xl font-bold text-gray-800 dark:text-white mb-2 tracking-wide animate-[slideUpFade_0.5s_ease-out_0.1s] opacity-0" style="animation-fill-mode: forwards;">Payment Successful</h2>
+        <h2 id="txn-result-title" class="text-xl font-bold text-white mb-2 tracking-wide animate-[slideUpFade_0.5s_ease-out_0.1s] opacity-0" style="animation-fill-mode: forwards;">Payment Successful</h2>
         
         <div class="text-5xl font-black tracking-tight mb-8 animate-[slideUpFade_0.5s_ease-out_0.2s] opacity-0" style="animation-fill-mode: forwards;">
             ₹<span id="txn-result-amount">0.00</span>
         </div>
 
-        <div class="theme-card rounded-3xl p-6 shadow-sm w-full max-w-sm border border-gray-100 dark:border-gray-800 relative overflow-hidden animate-[slideUpFade_0.5s_ease-out_0.3s] opacity-0 text-left" style="animation-fill-mode: forwards;">
-            <div class="flex items-center gap-4 mb-6 pb-6 border-b border-gray-100 dark:border-gray-800">
-                <div class="w-14 h-14 rounded-full border-2 border-gray-200 dark:border-gray-700 overflow-hidden shrink-0 shadow-inner bg-gray-100">
+        <div class="theme-card rounded-3xl p-6 shadow-sm w-full max-w-sm border border-gray-800 relative overflow-hidden animate-[slideUpFade_0.5s_ease-out_0.3s] opacity-0 text-left" style="animation-fill-mode: forwards;">
+            <div class="flex items-center gap-4 mb-6 pb-6 border-b border-gray-800">
+                <div class="w-14 h-14 rounded-full border-2 border-gray-700 overflow-hidden shrink-0 shadow-inner bg-gray-900">
                     <img id="txn-result-dp" src="" class="w-full h-full object-cover hidden">
                     <div id="txn-result-initial" class="w-full h-full flex items-center justify-center text-xl font-black text-gray-400">U</div>
                 </div>
@@ -79,9 +62,9 @@
                 </div>
             </div>
             
-            <div id="txn-result-error-box" class="hidden mb-6 p-4 bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-800 rounded-xl">
+            <div id="txn-result-error-box" class="hidden mb-6 p-4 theme-card border border-red-500 rounded-xl">
                 <p class="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">Failure Reason</p>
-                <p id="txn-result-error-reason" class="text-sm font-bold text-red-600 dark:text-red-400">Insufficient Balance</p>
+                <p id="txn-result-error-reason" class="text-sm font-bold text-red-400">Insufficient Balance</p>
             </div>
 
             <div class="space-y-4">
@@ -96,91 +79,24 @@
             </div>
         </div>
 
-        <button onclick="closeSuccessOverlay()" class="mt-8 mb-6 w-full max-w-sm theme-card border border-gray-200 dark:border-gray-700 text-contrast font-black py-4 rounded-xl shadow-sm tracking-wide animate-[slideUpFade_0.5s_ease-out_0.5s] opacity-0" style="animation-fill-mode: forwards;">BACK TO DASHBOARD</button>
-    </div>
-
-    <div id="public-lifafa-wrapper" class="fixed inset-0 theme-card z-[1000] hidden flex-col items-center justify-center p-6 text-center overflow-y-auto backdrop-blur-md bg-opacity-95">
-        <div class="w-20 h-20 bg-amber-50 text-amber-500 rounded-3xl mx-auto flex items-center justify-center text-4xl mb-6 shadow-xl border border-amber-200 animate-[slideDown_0.5s_ease-out] relative lifafa-float">
-            <i class="fas fa-envelope-open-text relative z-10"></i>
-            <div class="absolute inset-0 bg-amber-400 rounded-3xl animate-ping opacity-20"></div>
-        </div>
-        <h1 class="text-3xl font-black italic tracking-tight mb-2 animate-[slideUpFade_0.5s_ease-out_0.1s] opacity-0" style="animation-fill-mode: forwards;">LIFAFA <span class="text-amber-500">CLAIM</span></h1>
-        
-        <div id="lif-public-step-1" class="w-full max-w-sm theme-card rounded-3xl p-6 shadow-2xl border border-gray-100 text-left animate-[slideUpFade_0.5s_ease-out_0.3s] opacity-0" style="animation-fill-mode: forwards;">
-            <label class="block text-xs font-bold text-gray-400 mb-2 tracking-wide uppercase">Your Number (10 Digits)</label>
-            <input type="tel" id="public-lif-phone" maxlength="10" placeholder="Enter Registered Phone" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-4 text-sm mb-5 focus-accent theme-card font-bold">
-            <button type="button" onclick="verifyLifafaUser()" class="btn-animate w-full accent-bg text-white font-black py-4 rounded-xl shadow-lg transition-colors tracking-wide">NEXT <i class="fas fa-arrow-right ml-1"></i></button>
-            <div class="text-center mt-4"><button type="button" onclick="window.location.href='/'" class="text-gray-400 hover:text-amber-600 text-xs font-bold transition-colors">Go to Home</button></div>
-        </div>
-        
-        <div id="lif-public-step-2" class="hidden w-full max-w-sm theme-card rounded-3xl p-6 shadow-2xl border border-gray-100 text-left animate-[slideUpFade_0.5s_ease-out]">
-            <label class="block text-xs font-bold text-gray-400 mb-4 tracking-wide uppercase text-center">Join Required Channels</label>
-            <a href="https://t.me/Lion_Pay_Alert_Bot" target="_blank" class="block w-full bg-blue-100 hover:bg-blue-200 text-blue-700 font-black py-3 rounded-xl mb-4 text-center text-xs transition-colors border border-blue-200"><i class="fas fa-robot mr-1"></i> Start Verification Bot First</a>
-            <div id="public-channels-grid" class="grid grid-cols-2 gap-3 mb-6"></div>
-            <button type="button" id="btn-lif-verify-channels" onclick="verifyLifafaChannelsJoined()" class="btn-animate w-full bg-blue-500 hover:bg-blue-600 text-white font-black py-4 rounded-xl shadow-lg transition-colors tracking-wide flex items-center justify-center gap-2"><i class="fas fa-sync-alt"></i> CHECK MEMBERSHIP</button>
-            <div class="text-center mt-4"><button type="button" onclick="resetPublicLifafa()" class="text-gray-400 hover:text-amber-600 text-xs font-bold transition-colors">Back</button></div>
-        </div>
-        
-        <div id="lif-public-step-3" class="hidden w-full max-w-sm theme-card rounded-3xl p-6 shadow-2xl border border-gray-100 text-left animate-[slideUpFade_0.5s_ease-out] relative overflow-hidden">
-            <div class="absolute top-0 right-0 p-4 opacity-10"><i class="fas fa-check-circle text-6xl text-green-500"></i></div>
-            <h3 class="text-green-500 font-black text-sm mb-4 tracking-wide uppercase"><i class="fas fa-shield-check"></i> Verification Successful</h3>
-            <div id="public-lif-password-box" class="hidden mb-6">
-                <label class="block text-xs font-bold text-gray-400 mb-2 tracking-wide uppercase"><i class="fas fa-lock text-amber-500"></i> Access Code</label>
-                <input type="text" id="public-lif-password" placeholder="Enter Password" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-4 text-center tracking-widest text-lg focus-accent theme-card font-black">
-            </div>
-            <button type="button" onclick="executePublicLifafaClaim()" class="btn-animate w-full accent-bg text-white font-black py-4 rounded-xl shadow-lg transition-colors tracking-wide text-lg relative overflow-hidden group">
-                <div class="absolute inset-0 bg-white/20 transform -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
-                <i class="fas fa-gift animate-pulse mr-2"></i> CLAIM NOW
-            </button>
-            <div class="text-center mt-4"><button type="button" onclick="resetPublicLifafa()" class="text-gray-400 hover:text-amber-600 text-[10px] font-bold transition-colors uppercase tracking-wider">Cancel</button></div>
-        </div>
-
-        <div id="lif-public-refer-step" class="hidden w-full max-w-sm theme-card rounded-3xl p-6 shadow-2xl border border-gray-100 text-center animate-[slideUpFade_0.5s_ease-out]">
-            <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 border border-blue-100"><i class="fas fa-share-alt"></i></div>
-            <h2 class="text-xl font-black mb-1">Refer & Earn!</h2>
-            <p class="text-xs text-gray-500 font-bold mb-6">You've already claimed this Lifafa. Share your unique link below to earn extra rewards for every friend who claims!</p>
-            <div class="relative">
-                <input type="text" id="public-lif-refer-link" readonly class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-4 text-xs font-mono text-gray-600 pr-12 focus-accent theme-card">
-                <button type="button" onclick="copyText(document.getElementById('public-lif-refer-link').value)" class="absolute right-2 top-2 w-10 h-10 flex items-center justify-center bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-sm"><i class="fas fa-copy"></i></button>
-            </div>
-            <div class="text-center mt-6"><button type="button" onclick="window.location.href='/'" class="text-gray-400 hover:text-amber-600 text-xs font-bold transition-colors">Go to Home</button></div>
-        </div>
-
-        <div id="lif-public-result" class="hidden w-full max-w-sm theme-card rounded-3xl p-6 shadow-2xl border border-gray-100 text-center animate-[slideUpFade_0.5s_ease-out]"></div>
-    </div>
-
-    <div id="new-message-popup" class="fixed top-6 left-1/2 transform -translate-x-1/2 w-11/12 max-w-sm bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl p-4 shadow-2xl z-[400] hidden flex-row items-center gap-4 cursor-pointer hover:scale-[1.02] transition-all duration-300 animate-[slideDown_0.5s_ease-out]" onclick="handleMessageNotificationClick()">
-        <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center shrink-0 shadow-inner"><i class="fas fa-bell text-xl animate-pulse"></i></div>
-        <div class="flex-1"><h3 class="font-black text-sm tracking-wide">New messages by admin</h3><p class="text-xs text-blue-100 opacity-90 truncate font-medium">Tap to view official posts</p></div><i class="fas fa-chevron-right opacity-70"></i>
-    </div>
-
-    <div id="customIdModal" class="fixed inset-0 bg-black bg-opacity-70 z-[600] hidden flex items-center justify-center backdrop-blur-sm transition-opacity duration-300 opacity-0">
-        <div class="theme-card rounded-3xl p-6 max-w-sm w-full mx-4 shadow-2xl relative">
-            <button onclick="closeCustomIdModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-800"><i class="fas fa-times text-xl"></i></button>
-            <h2 class="text-xl font-black mb-2">Create Custom ID</h2>
-            <p class="text-xs text-gray-500 mb-4" id="custom-id-pricing">Cost: ₹5 (Premium users pay ₹3)</p>
-            <input type="text" id="input-custom-id" placeholder="e.g. rahul123" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-4 focus-accent font-bold theme-card font-black">
-            <button onclick="saveCustomId()" class="btn-animate w-full accent-bg text-white font-bold py-3 rounded-xl transition-colors shadow-md">Set Custom ID</button>
-        </div>
+        <button onclick="closeSuccessOverlay()" class="mt-8 mb-6 w-full max-w-sm theme-card border border-gray-700 text-contrast font-black py-4 rounded-xl shadow-sm tracking-wide animate-[slideUpFade_0.5s_ease-out_0.5s] opacity-0" style="animation-fill-mode: forwards;">BACK TO DASHBOARD</button>
     </div>
 
     <div id="maintenance-wrapper" class="fixed inset-0 theme-card z-[9999] hidden flex-col items-center justify-center p-6 text-center">
-        <div class="w-32 h-32 mb-6 animate-pulse flex items-center justify-center mx-auto"><i class="fas fa-tools text-6xl text-yellow-500 bg-yellow-50 p-8 rounded-full border border-yellow-200 shadow-lg"></i></div>
+        <div class="w-32 h-32 mb-6 animate-pulse flex items-center justify-center mx-auto"><i class="fas fa-tools text-6xl text-yellow-500 bg-yellow-900/20 p-8 rounded-full border border-yellow-500/30 shadow-lg"></i></div>
         <h1 class="text-3xl font-black italic tracking-tight mb-3">SYSTEM <span class="text-yellow-500">MAINTENANCE</span></h1>
-        <p class="text-sm font-bold text-gray-500 mb-10 max-w-xs mx-auto">App is under maintenance. We are upgrading our servers and will be back online shortly!</p>
+        <p class="text-sm font-bold text-gray-400 mb-10 max-w-xs mx-auto">Nova Wallet is under maintenance. We are upgrading our servers and will be back online shortly!</p>
         <div class="w-full max-w-xs mx-auto space-y-4">
-            <a href="https://t.me/lionpay" id="maint-channel-link" target="_blank" class="block w-full bg-blue-50 text-blue-500 font-black py-4 rounded-xl shadow-sm border border-blue-100 transition-colors hover:bg-blue-100"><i class="fab fa-telegram-plane mr-2"></i> OFFICIAL CHANNEL</a>
-            <a href="https://t.me/LION_OWNER" id="maint-support-link" target="_blank" class="block w-full bg-gray-900 text-white font-black py-4 rounded-xl shadow-lg transition-colors hover:bg-black"><i class="fas fa-headset mr-2"></i> CUSTOMER SUPPORT</a>
+            <a href="https://t.me/NovaWallet" target="_blank" class="block w-full theme-card text-blue-500 font-black py-4 rounded-xl shadow-sm border border-blue-500 transition-colors"><i class="fab fa-telegram-plane mr-2"></i> OFFICIAL CHANNEL</a>
         </div>
     </div>
 
     <div id="banned-wrapper" class="fixed inset-0 theme-card z-[500] hidden flex-col items-center justify-center p-6 text-center">
-        <div class="w-24 h-24 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center text-5xl mb-6 shadow-inner border border-red-100 mx-auto"><i class="fas fa-paw"></i></div>
+        <div class="w-24 h-24 theme-card text-red-500 rounded-3xl flex items-center justify-center text-5xl mb-6 shadow-inner border border-red-500 mx-auto"><i class="fas fa-ban"></i></div>
         <h1 class="text-3xl font-black tracking-tight mb-2">ACCOUNT BANNED</h1>
-        <p class="text-sm font-bold text-red-500 mb-8 max-w-xs mx-auto bg-red-50 p-3 rounded-lg border border-red-100">This account can no longer use Lion Pay.</p>
+        <p class="text-sm font-bold text-red-500 mb-8 max-w-xs mx-auto theme-card p-3 rounded-lg border border-red-500">This account can no longer use Nova Wallet.</p>
         <div class="w-full max-w-xs mx-auto space-y-4">
-            <a href="https://t.me/LION_OWNER" id="banned-support-link" target="_blank" class="block w-full bg-gray-900 text-white font-black py-4 rounded-xl shadow-lg transition-colors hover:bg-black"><i class="fas fa-headset mr-2"></i> CUSTOMER SUPPORT</a>
-            <button onclick="logoutUser()" class="block w-full theme-card font-black py-4 rounded-xl shadow-sm border border-gray-200 transition-colors hover:bg-gray-50">REGISTER / LOGOUT</button>
+            <button onclick="logoutUser()" class="block w-full theme-card font-black py-4 rounded-xl shadow-sm border border-gray-700 transition-colors">LOGOUT</button>
         </div>
     </div>
 
@@ -188,71 +104,141 @@
         <i class="fas fa-info-circle accent-text"></i> <span id="toastMsg" class="font-medium">Message</span>
     </div>
 
+    <div id="custom-pin-modal" class="fixed inset-0 z-[9999] hidden flex-col justify-end transition-opacity duration-300 opacity-0">
+        <div class="bg-[#121212] rounded-t-[2.5rem] p-6 border-t border-red-500/30 shadow-[0_-10px_40px_rgba(239,68,68,0.2)] pb-10">
+            <div class="flex justify-between items-center mb-2 px-2">
+                <h3 class="text-white font-black tracking-widest uppercase text-sm">Enter Security PIN</h3>
+                <button onclick="closePinModal()" class="text-gray-500 hover:text-red-500 transition-colors"><i class="fas fa-times text-2xl"></i></button>
+            </div>
+            
+            <div class="pin-display-container">
+                <div class="pin-dash" id="pin-dot-1">_</div>
+                <div class="pin-dash" id="pin-dot-2">_</div>
+                <div class="pin-dash" id="pin-dot-3">_</div>
+                <div class="pin-dash" id="pin-dot-4">_</div>
+            </div>
+            
+            <div class="pin-numpad">
+                <button onclick="pinKeyPress('1')" class="numpad-btn">1</button>
+                <button onclick="pinKeyPress('2')" class="numpad-btn">2</button>
+                <button onclick="pinKeyPress('3')" class="numpad-btn">3</button>
+                <button onclick="pinKeyPress('4')" class="numpad-btn">4</button>
+                <button onclick="pinKeyPress('5')" class="numpad-btn">5</button>
+                <button onclick="pinKeyPress('6')" class="numpad-btn">6</button>
+                <button onclick="pinKeyPress('7')" class="numpad-btn">7</button>
+                <button onclick="pinKeyPress('8')" class="numpad-btn">8</button>
+                <button onclick="pinKeyPress('9')" class="numpad-btn">9</button>
+                <button onclick="pinKeyBackspace()" class="numpad-btn numpad-action"><i class="fas fa-backspace"></i></button>
+                <button onclick="pinKeyPress('0')" class="numpad-btn">0</button>
+                <button onclick="submitPinModal()" class="numpad-btn numpad-action tick"><i class="fas fa-check-circle"></i></button>
+            </div>
+        </div>
+    </div>
+
     <div id="auth-wrapper" class="fixed inset-0 theme-card z-[200] overflow-y-auto hidden">
         <div id="auth-login" class="min-h-screen flex flex-col p-6 items-center justify-center relative font-bold">
-            <div class="w-20 h-20 bg-yellow-50 text-yellow-500 rounded-3xl flex items-center justify-center text-4xl mb-6 shadow-inner border border-yellow-100"><i class="fas fa-paw animate-bounce"></i></div>
-            <h1 class="text-3xl font-black italic tracking-tight mb-1 text-gray-800 dark:text-white animate-pulse">LION <span class="text-yellow-500">PAY</span></h1>
-            <p class="text-xs font-bold text-gray-400 tracking-widest mb-6 uppercase">Secure Wallet</p>
-            <form onsubmit="event.preventDefault(); processLogin()" class="w-full max-w-sm theme-card rounded-3xl p-6 shadow-sm border border-gray-100 mt-2 font-medium">
-                <label class="block text-xs font-bold text-gray-400 mb-2">PHONE NUMBER / EMAIL ID</label>
-                <input type="text" id="login-phone" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-4 focus-accent font-bold theme-card" placeholder="Enter Phone or Email">
-                <label class="block text-xs font-bold text-gray-400 mb-2">PASSWORD</label>
-                <input type="password" id="login-pass" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-6 focus-accent font-bold tracking-widest theme-card" placeholder="Enter Password">
-                <button type="submit" class="btn-animate w-full accent-bg text-white font-black py-4 rounded-xl shadow-lg mb-4">SECURE LOGIN</button>
-                <div class="flex justify-between text-xs font-bold"><button type="button" onclick="showAuthView('reset-pin')" class="text-gray-400 hover:text-yellow-600 transition-colors font-semibold">Forgot PIN/Password?</button><button type="button" onclick="showAuthView('signup')" class="text-yellow-600 hover:text-yellow-700 transition-colors font-bold">Create Account</button></div>
+            <div class="w-20 h-20 theme-card text-red-500 rounded-3xl flex items-center justify-center text-4xl mb-6 shadow-inner border border-red-500/50"><i class="fas fa-wallet animate-pulse"></i></div>
+            <h1 class="text-4xl font-black italic tracking-tighter mb-1 text-white uppercase drop-shadow-md">NOVA <span class="text-red-500">WALLET</span></h1>
+            <p class="text-[10px] font-bold text-gray-500 tracking-[0.3em] mb-10 uppercase">Access Your Ecosystem</p>
+            
+            <form onsubmit="event.preventDefault(); processLogin()" class="w-full max-w-sm theme-card p-6 shadow-2xl border border-red-500/20 mt-2 font-medium">
+                <label class="nova-label"><i class="fas fa-user mr-1"></i> IDENTIFIER</label>
+                <input type="text" id="login-phone" required class="nova-input mb-5" placeholder="Enter Phone or Email">
+                
+                <label class="nova-label"><i class="fas fa-lock mr-1"></i> PASSWORD</label>
+                <input type="password" id="login-pass" required class="nova-input mb-8 tracking-widest" placeholder="••••••••">
+                
+                <button type="submit" class="btn-animate w-full accent-bg text-white font-black py-4 rounded-xl shadow-lg mb-5 tracking-widest uppercase">Authenticate</button>
+                <div class="flex justify-between text-xs font-black px-1">
+                    <button type="button" onclick="showAuthView('reset-pin')" class="text-gray-500 hover:text-white transition-colors">Recover PIN?</button>
+                    <button type="button" onclick="showAuthView('signup')" class="text-red-500 hover:text-red-400 transition-colors uppercase">Create Wallet</button>
+                </div>
             </form>
         </div>
 
         <div id="auth-signup" class="min-h-screen flex flex-col p-6 items-center justify-center relative hidden">
-            <h2 class="text-2xl font-black mb-6 text-gray-800 dark:text-white">CREATE ACCOUNT</h2>
-            <form onsubmit="event.preventDefault(); processSignupStep1()" class="w-full max-w-sm theme-card rounded-3xl p-6 shadow-sm border border-gray-100 font-semibold">
-                <label class="block text-xs font-bold text-gray-400 mb-1">FULL NAME</label><input type="text" id="reg-name" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-3 focus-accent font-bold theme-card font-black">
-                <label class="block text-xs font-bold text-gray-400 mb-1">PHONE NUMBER</label><input type="tel" id="reg-phone" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-3 focus-accent font-bold theme-card font-black">
-                <label class="block text-xs font-bold text-gray-400 mb-1">EMAIL ADDRESS</label><input type="email" id="reg-email" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-3 focus-accent font-bold theme-card font-black">
-                <label class="block text-xs font-bold text-gray-400 mb-1">PASSWORD</label><input type="password" id="reg-pass" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-3 focus-accent font-bold theme-card font-semibold">
-                <label class="block text-xs font-bold text-gray-400 mb-1">SECURITY PIN (4 DIGITS)</label><input type="password" id="reg-pin" required maxlength="4" pattern="\d{4}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-3 focus-accent font-bold tracking-widest text-center theme-card font-black">
-                <label class="block text-xs font-bold text-gray-400 mb-1">TELEGRAM CHAT ID</label>
-                <div class="flex gap-2 mb-4">
-                    <input type="text" id="reg-telegram" required placeholder="e.g. 123456789" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus-accent font-bold font-mono theme-card font-bold">
-                    <button type="button" onclick="window.open('https://t.me/NovaPayAlertBot', '_blank')" class="bg-red-500 hover:bg-red-600 transition-colors text-white rounded-xl px-4 font-bold text-xs flex items-center justify-center whitespace-nowrap shadow-md">Get ID</button>
+            <h2 class="text-2xl font-black mb-6 text-white tracking-widest uppercase">Join Nova</h2>
+            <form onsubmit="event.preventDefault(); processSignupStep1()" class="w-full max-w-sm theme-card p-6 shadow-2xl border border-red-500/20">
+                <label class="nova-label">Full Name</label>
+                <input type="text" id="reg-name" required class="nova-input mb-4" placeholder="Your Legal Name">
+                
+                <label class="nova-label">Phone Number</label>
+                <input type="tel" id="reg-phone" required class="nova-input mb-4" placeholder="10-Digit Mobile">
+                
+                <label class="nova-label">Email Address</label>
+                <input type="email" id="reg-email" required class="nova-input mb-4" placeholder="name@domain.com">
+                
+                <label class="nova-label">Master Password</label>
+                <input type="password" id="reg-pass" required class="nova-input mb-4" placeholder="Strong Password">
+                
+                <label class="nova-label">Security PIN (4-Digit)</label>
+                <input type="password" id="reg-pin" required maxlength="4" pattern="\d{4}" class="nova-input mb-4 tracking-[0.5em] text-center" placeholder="••••">
+                
+                <label class="nova-label">Telegram Chat ID</label>
+                <div class="flex gap-2 mb-6">
+                    <input type="text" id="reg-telegram" required placeholder="e.g. 123456789" class="nova-input font-mono text-center">
+                    <button type="button" onclick="window.open('https://t.me/NovaPayAlertBot', '_blank')" class="bg-blue-600 hover:bg-blue-500 transition-colors text-white rounded-xl px-4 font-black text-xs flex items-center justify-center whitespace-nowrap shadow-md"><i class="fas fa-search mr-1"></i> Get ID</button>
                 </div>
-                <button type="button" onclick="window.open('https://t.me/NovaPayAlertBot', '_blank')" class="block w-full bg-blue-50 text-blue-500 font-bold text-xs py-3 px-4 rounded-xl mb-4 text-center border border-blue-100 hover:bg-blue-100 transition-colors font-bold"><i class="fab fa-telegram"></i> Start the Alert Bot</button>
-                <button type="submit" id="btn-signup-otp" class="btn-animate w-full accent-bg text-white font-black py-4 rounded-xl shadow-lg mb-4 font-black">SEND OTP TO TELEGRAM</button>
-                <div class="text-center"><button type="button" onclick="showAuthView('login')" class="text-gray-400 hover:text-yellow-600 text-xs font-bold transition-colors">Back to Login</button></div>
+
+                <button type="submit" id="btn-signup-otp" class="btn-animate w-full accent-bg text-white font-black py-4 rounded-xl shadow-lg mb-5 tracking-widest uppercase">Send Telegram OTP</button>
+                <div class="text-center"><button type="button" onclick="showAuthView('login')" class="text-gray-500 hover:text-white text-xs font-black transition-colors uppercase">Return to Login</button></div>
             </form>
         </div>
 
         <div id="auth-otp" class="min-h-screen flex flex-col p-6 items-center justify-center relative hidden">
-            <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center text-3xl mb-4"><i class="fab fa-telegram-plane animate-bounce"></i></div>
-            <h2 class="text-xl font-black mb-2 text-gray-800 dark:text-white">VERIFY OTP</h2>
-            <p class="text-sm text-gray-500 text-center mb-6 font-medium">We sent a 6-digit code to your Telegram bot.</p>
-            <form onsubmit="event.preventDefault(); verifyOTP()" class="w-full max-w-sm theme-card rounded-3xl p-6 shadow-sm border border-gray-100 font-bold">
-                <input type="text" id="otp-input" required maxlength="6" placeholder="------" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-4 text-2xl text-center mb-6 focus-accent font-black tracking-[0.5em] theme-card">
-                <button type="submit" class="btn-animate w-full accent-bg text-white font-black py-4 rounded-xl shadow-lg mb-4">VERIFY & PROCEED</button>
-                <div class="text-center"><button type="button" onclick="showAuthView('login')" class="text-red-400 hover:text-red-600 text-xs font-bold transition-colors">Cancel</button></div>
+            <div class="w-20 h-20 theme-card text-blue-500 border border-blue-500 rounded-full flex items-center justify-center text-4xl mb-6"><i class="fab fa-telegram-plane animate-bounce"></i></div>
+            <h2 class="text-2xl font-black mb-2 text-white tracking-widest uppercase">Verification</h2>
+            <p class="text-xs text-gray-400 text-center mb-8 font-bold uppercase tracking-wider">A 6-digit code was sent to your bot.</p>
+            <form onsubmit="event.preventDefault(); verifyOTP()" class="w-full max-w-sm theme-card p-6 shadow-2xl border border-red-500/20">
+                <input type="text" id="otp-input" required maxlength="6" placeholder="••••••" class="w-full bg-[#0f0f0f] border border-[#2a2a2a] text-white rounded-xl px-4 py-5 text-3xl text-center mb-6 focus-accent font-black tracking-[0.5em] shadow-inner outline-none focus:border-red-500">
+                <button type="submit" class="btn-animate w-full accent-bg text-white font-black py-4 rounded-xl shadow-lg mb-5 tracking-widest uppercase">Confirm Identity</button>
+                <div class="text-center"><button type="button" onclick="showAuthView('login')" class="text-red-500 hover:text-red-400 text-xs font-black transition-colors uppercase">Cancel</button></div>
             </form>
         </div>
 
         <div id="auth-reset-pin" class="min-h-screen flex flex-col p-6 items-center justify-center relative hidden">
-            <h2 class="text-xl font-black mb-6 text-gray-800 dark:text-white">RESET PIN / PASSWORD</h2>
-            <form onsubmit="event.preventDefault(); processResetPinStep1()" class="w-full max-w-sm theme-card rounded-3xl p-6 shadow-sm border border-gray-100 font-semibold" id="form-reset-1">
-                <label class="block text-xs font-bold text-gray-400 mb-2">REGISTERED PHONE NUMBER</label><input type="tel" id="reset-phone" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-6 focus-accent font-bold theme-card font-semibold">
-                <button type="submit" class="btn-animate w-full bg-gray-900 text-white font-black py-4 rounded-xl shadow-lg mb-4">SEND OTP</button>
-                <div class="text-center"><button type="button" onclick="showAuthView('login')" class="text-gray-400 hover:text-yellow-600 text-xs font-bold transition-colors font-bold">Back</button></div>
+            <h2 class="text-xl font-black mb-6 text-white tracking-widest uppercase">Recover Access</h2>
+            <form onsubmit="event.preventDefault(); processResetPinStep1()" class="w-full max-w-sm theme-card p-6 shadow-2xl border border-red-500/20" id="form-reset-1">
+                <label class="nova-label">Registered Phone Number</label>
+                <input type="tel" id="reset-phone" required class="nova-input mb-6" placeholder="Enter mobile number">
+                <button type="submit" class="btn-animate w-full bg-white text-black font-black py-4 rounded-xl shadow-lg mb-5 tracking-widest uppercase">Request OTP</button>
+                <div class="text-center"><button type="button" onclick="showAuthView('login')" class="text-gray-500 hover:text-white text-xs font-black transition-colors uppercase">Back to Login</button></div>
             </form>
-            <form onsubmit="event.preventDefault(); processResetPinStep2()" class="w-full max-w-sm theme-card rounded-3xl p-6 shadow-sm border border-gray-100 hidden font-bold" id="form-reset-2">
-                <label class="block text-xs font-bold text-gray-400 mb-1">NEW PASSWORD</label><input type="password" id="reset-new-pass" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-3 focus-accent font-bold theme-card">
-                <label class="block text-xs font-bold text-gray-400 mb-1">NEW PIN (4 DIGITS)</label><input type="password" id="reset-new-pin" required maxlength="4" pattern="\d{4}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-6 focus-accent font-bold text-center tracking-widest theme-card">
-                <button type="submit" class="btn-animate w-full bg-green-500 text-white font-black py-4 rounded-xl shadow-lg">SAVE CHANGES</button>
+            <form onsubmit="event.preventDefault(); processResetPinStep2()" class="w-full max-w-sm theme-card p-6 shadow-2xl border border-red-500/20 hidden" id="form-reset-2">
+                <label class="nova-label">New Password</label>
+                <input type="password" id="reset-new-pass" required class="nova-input mb-4" placeholder="Enter new password">
+                <label class="nova-label">New PIN (4 Digits)</label>
+                <input type="password" id="reset-new-pin" required maxlength="4" pattern="\d{4}" class="nova-input mb-6 tracking-widest text-center" placeholder="••••">
+                <button type="submit" class="btn-animate w-full bg-green-600 text-white font-black py-4 rounded-xl shadow-lg tracking-widest uppercase">Save Changes</button>
             </form>
         </div>
     </div>
 
     <main id="app-container">
+        
+        <div id="view-scan" class="view-section min-h-screen relative hidden z-[100]">
+            <header class="absolute top-0 left-0 w-full p-4 z-[110] flex justify-between items-center bg-gradient-to-b from-black/90 to-transparent">
+                <button onclick="closeScanner()" class="w-10 h-10 bg-white/10 backdrop-blur-md rounded-full text-white flex items-center justify-center border border-white/20"><i class="fas fa-arrow-left"></i></button>
+                <h1 class="text-white font-black tracking-widest text-lg drop-shadow-md">SCAN QR</h1>
+                <div class="w-10 h-10"></div>
+            </header>
+            
+            <div id="reader" class="w-full h-full absolute inset-0"></div>
+            
+            <div class="scanner-overlay-btns">
+                <label class="scan-btn cursor-pointer">
+                    <input type="file" id="qr-upload-input" accept="image/*" class="hidden" onchange="handleQRImage(event)">
+                    <i class="fas fa-image"></i>
+                </label>
+                <button id="btn-qr-torch" onclick="toggleQRTorch()" class="scan-btn"><i class="fas fa-bolt"></i></button>
+                <button id="btn-qr-zoom" onclick="toggleQRZoom()" class="scan-btn text-lg font-black font-mono">1X</button>
+            </div>
+        </div>
+
         <div id="view-home" class="view-section active relative z-10">
             <header class="flex justify-between items-center p-4 theme-card shadow-sm sticky top-0 z-30">
                 <button onclick="toggleSidebar()" class="text-xl hover:text-red-500 transition-colors accent-text anim-menu-icon"><i class="fas fa-bars"></i></button>
-                <h1 class="text-xl font-black tracking-widest accent-text italic">LION PAY</h1>
+                <h1 class="text-xl font-black tracking-widest accent-text italic uppercase">Nova Wallet</h1>
                 <div class="flex items-center gap-4 font-bold">
                     <button onclick="alert('Coming soon')" class="accent-text text-2xl hover:scale-110 transition-transform cursor-pointer anim-nav-tg"><i class="fab fa-telegram"></i></button>
                     <div class="w-9 h-9 rounded-full accent-bg text-white flex items-center justify-center font-bold border-2 accent-border cursor-pointer overflow-hidden animate-pulse" id="ui-user-initial">U</div>
@@ -283,18 +269,18 @@
                     </div>
                 </div>
 
-                <div class="flex flex-col gap-3 mt-2 mb-6">
+                <div class="grid grid-cols-2 gap-4 mt-2 mb-6">
                     <div class="stat-rect cursor-pointer" onclick="handleSecretDeleteHistoryTap()">
-                        <p class="text-[10px] font-black tracking-widest text-gray-500 uppercase mb-1"><i class="fas fa-arrow-trend-up text-blue-500 mr-1"></i> Total Credit</p>
-                        <div id="home-stats-credit" class="text-2xl font-black text-contrast tracking-tight">₹0.00</div>
+                        <p class="text-[10px] font-black tracking-widest text-gray-500 uppercase mb-1"><i class="fas fa-arrow-trend-up text-red-500 mr-1"></i> Earning</p>
+                        <div id="home-stats-credit" class="text-xl font-black text-contrast tracking-tight">₹0.00</div>
                     </div>
                     <div class="stat-rect">
-                        <p class="text-[10px] font-black tracking-widest text-gray-500 uppercase mb-1"><i class="fas fa-percent text-blue-500 mr-1"></i> Success Rate</p>
-                        <div id="home-stats-rate" class="text-2xl font-black text-contrast tracking-tight">100%</div>
+                        <p class="text-[10px] font-black tracking-widest text-gray-500 uppercase mb-1"><i class="fas fa-percent text-red-500 mr-1"></i> Success Rate</p>
+                        <div id="home-stats-rate" class="text-xl font-black text-contrast tracking-tight">100%</div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4 mb-8" id="grid-container-actions">
+                <div class="grid grid-cols-2 gap-4 mx-1 mb-8" id="grid-container-actions">
                     <button onclick="showView('send')" class="sq-action-btn anim-send btn-animate">
                         <div class="sq-icon-wrap icon-bg-blue"><i class="fas fa-paper-plane"></i></div>
                         <span class="text-xs font-black tracking-wide text-contrast">Send Money</span>
@@ -321,502 +307,405 @@
                     </button>
                 </div>
             </div>
-
-            <div class="px-4 pb-4 font-bold relative z-10">
-                <div class="flex justify-between items-end mb-4">
-                    <h3 class="font-black text-sm tracking-wide">Recent Transactions</h3>
-                    <button onclick="showView('txn')" class="text-[10px] font-bold accent-text hover:underline">VIEW ALL</button>
-                </div>
-                <div id="home-txn-list" class="theme-card rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col"></div>
-            </div>
         </div>
 
-        <div id="view-botalert" class="view-section min-h-screen theme-card font-bold relative">
-            <header class="flex items-center p-4 sticky top-0 z-30 border-b border-gray-100 theme-card shadow-sm">
-                <button onclick="showView('home')" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-800 dark:text-white"><i class="fas fa-arrow-left"></i></button>
-                <h1 class="ml-4 text-[16px] font-black tracking-wide text-contrast">BOT ALERT SETTINGS</h1>
+        <div id="view-send" class="view-section relative z-10">
+            <header class="flex items-center p-4 theme-card shadow-sm sticky top-0 z-30 border-b border-red-500/20">
+                <button onclick="showView('home')" class="w-10 h-10 rounded-full flex items-center justify-center text-white bg-gray-900 border border-gray-800 transition-colors hover:bg-red-500"><i class="fas fa-arrow-left"></i></button>
+                <h1 class="ml-4 text-[16px] font-black tracking-widest text-white uppercase">DIRECT TRANSFER</h1>
             </header>
-            
-            <div class="p-6 text-center">
-                <div class="w-24 h-24 theme-card text-blue-500 rounded-full flex items-center justify-center text-5xl mb-6 mx-auto shadow-inner border border-blue-500 animate-[botAlertWobble_2.5s_infinite]"><i class="fas fa-robot"></i></div>
-                <h2 class="text-2xl font-black mb-2 tracking-wide text-contrast">Telegram Bot Alerts</h2>
-                <a href="https://t.me/NovaPayAlertBot" target="_blank" class="inline-block theme-card text-blue-500 border border-blue-500 font-black text-sm px-4 py-1.5 rounded-full mb-6 hover:bg-blue-900/30 transition-colors">@NovaPayAlertBot</a>
-                <p class="text-xs text-gray-500 mb-8 max-w-sm mx-auto leading-relaxed">This bot sends real-time notifications for your deposits, withdrawals, and transfers directly to your Telegram.</p>
-                
-                <div class="theme-card rounded-3xl p-6 shadow-sm border border-gray-100 text-left max-w-sm mx-auto">
-                    <div class="flex items-center justify-between theme-card p-4 rounded-xl mb-6 border border-gray-100 dark:border-gray-700 shadow-sm">
-                        <div>
-                            <p class="font-black text-sm text-contrast">Transaction Alerts</p>
-                            <p class="text-[10px] text-gray-500 mt-1 uppercase font-bold tracking-wider">Receive Bot Messages</p>
-                        </div>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                          <input type="checkbox" id="toggle-bot-alert-check-fs" class="sr-only peer">
-                          <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500 shadow-inner"></div>
-                        </label>
-                    </div>
-
-                    <label class="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-wide">Telegram User ID (Numeric)</label>
-                    <input type="text" id="bot-alert-tg-id-fs" placeholder="e.g. 123456789" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-4 text-sm mb-6 focus-accent font-bold theme-card font-mono tracking-widest text-center shadow-inner">
-                    
-                    <button onclick="saveBotAlertSettingsFS()" class="btn-animate w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl transition-colors shadow-lg tracking-wide"><i class="fas fa-save mr-2"></i> SAVE CONFIGURATION</button>
+            <div class="p-5 font-bold">
+                <div class="theme-card rounded-2xl p-4 flex justify-between items-center shadow-lg border border-red-500/30 mb-6 bg-[#1a1a1a]">
+                    <span class="text-xs text-gray-400 uppercase tracking-widest font-black">BALANCE</span>
+                    <span class="text-red-500 text-xl font-black">₹<span class="global-balance blur-none transition-all">0.00</span></span>
                 </div>
-            </div>
-        </div>
-
-        <div id="view-send" class="view-section">
-            <header class="flex items-center p-4 theme-card shadow-sm sticky top-0 z-30">
-                <button onclick="showView('home')" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-800 dark:text-white transition-colors"><i class="fas fa-arrow-left"></i></button>
-                <h1 class="ml-4 text-[16px] font-black tracking-wide text-contrast">SEND MONEY</h1>
-            </header>
-            <div class="p-4 font-bold">
-                <div class="theme-card rounded-xl p-4 flex justify-between items-center shadow-sm text-sm font-semibold mb-6 border border-gray-100 font-bold">
-                    <span class="text-gray-500">WALLET BALANCE</span><span class="accent-text text-lg font-black">₹<span class="global-balance blur-none transition-all">0.00</span></span>
-                </div>
-                <form id="form-send" onsubmit="event.preventDefault(); processSend()" class="theme-card rounded-2xl p-5 shadow-sm border border-gray-100 font-medium">
-                    <label class="block text-xs font-bold text-gray-400 mb-2">RECIPIENT DETAILS</label>
-                    <input type="text" id="send-num" required placeholder="Enter mobile number" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus-accent transition-colors theme-card font-semibold mb-5">
+                <form id="form-send" onsubmit="event.preventDefault(); initiateAction('send')" class="theme-card rounded-3xl p-6 shadow-2xl border border-red-500/10">
+                    <label class="nova-label"><i class="fas fa-phone mr-1"></i> RECIPIENT IDENTIFIER</label>
+                    <input type="text" id="send-num" required placeholder="Enter Mobile Number" class="nova-input mb-5 font-mono">
                     
-                    <label class="block text-xs font-bold text-gray-400 mb-2">RECIPIENT NAME</label>
-                    <div id="send-name" class="w-full theme-card border border-gray-200 rounded-xl px-4 py-3 text-sm mb-5 font-bold text-gray-600 cursor-not-allowed transition-all min-h-[46px] flex items-center font-black">Auto-fetching name...</div>
+                    <label class="nova-label"><i class="fas fa-user-circle mr-1"></i> RECIPIENT NAME</label>
+                    <div id="send-name" class="w-full bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm mb-5 font-bold text-gray-500 cursor-not-allowed transition-all min-h-[50px] flex items-center shadow-inner">Scanning database...</div>
                     
-                    <label class="block text-xs font-bold text-gray-400 mb-2">AMOUNT TO SEND</label>
-                    <input type="number" id="send-amt" required min="1" placeholder="0.00" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-lg font-bold mb-5 focus:outline-none focus-accent transition-colors theme-card font-black">
+                    <label class="nova-label"><i class="fas fa-rupee-sign mr-1"></i> AMOUNT TO SEND</label>
+                    <input type="number" id="send-amt" required min="1" placeholder="0.00" class="nova-input mb-5 text-xl tracking-wider">
                     
-                    <label class="block text-xs font-bold text-gray-400 mb-2">COMMENT (OPTIONAL)</label>
-                    <input type="text" id="send-comment" placeholder="Add a note" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-5 focus:outline-none focus-accent transition-colors theme-card">
+                    <label class="nova-label"><i class="fas fa-comment-alt mr-1"></i> COMMENT (OPTIONAL)</label>
+                    <input type="text" id="send-comment" placeholder="Add a short note" class="nova-input mb-8">
                     
-                    <label class="block text-xs font-bold text-gray-400 mb-2">SECURITY PIN</label>
-                    <input type="password" id="send-pin" required maxlength="4" placeholder="••••" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center tracking-widest font-black text-lg mb-6 focus:outline-none focus-accent transition-colors theme-card font-black">
-                    
-                    <button type="submit" id="btn-send-submit" class="btn-animate w-full accent-bg text-white font-bold py-4 rounded-xl shadow-lg transition-colors font-black">CONFIRM & SEND</button>
+                    <button type="submit" class="btn-animate w-full accent-bg text-white font-black py-4 rounded-xl shadow-lg uppercase tracking-widest text-sm">PROCEED TO PAY</button>
                 </form>
             </div>
         </div>
 
-        <div id="view-add" class="view-section">
-            <header class="flex items-center p-4 theme-card shadow-sm sticky top-0 z-30">
-                <button onclick="showView('home')" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-800 dark:text-white"><i class="fas fa-arrow-left"></i></button>
-                <h1 class="ml-4 text-[16px] font-black tracking-wide text-contrast">ADD MONEY</h1>
+        <div id="view-add" class="view-section relative z-10">
+            <header class="flex items-center p-4 theme-card shadow-sm sticky top-0 z-30 border-b border-red-500/20">
+                <button onclick="showView('home')" class="w-10 h-10 rounded-full flex items-center justify-center text-white bg-gray-900 border border-gray-800 transition-colors hover:bg-red-500"><i class="fas fa-arrow-left"></i></button>
+                <h1 class="ml-4 text-[16px] font-black tracking-widest text-white uppercase">ADD MONEY</h1>
             </header>
-            <div class="p-4">
-                <div class="theme-card rounded-2xl p-5 shadow-sm border border-gray-100 mb-4 font-bold">
-                    <div class="accent-bg rounded-2xl p-6 text-center text-white shadow-lg mb-6">
-                        <p class="text-[10px] font-bold uppercase opacity-90 mb-1 tracking-wider">Pay To UPI ID</p>
-                        <h2 class="text-xl font-bold mb-4 tracking-wide font-mono text-white" id="ui-upi-id">Loading...</h2>
-                        <button type="button" onclick="copyText(document.getElementById('ui-upi-id').innerText)" class="bg-white/20 backdrop-blur-sm px-5 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 mx-auto"><i class="fas fa-copy"></i> Copy UPI ID</button>
+            <div class="p-5">
+                <div class="theme-card rounded-3xl p-6 shadow-2xl border border-red-500/20 mb-6 bg-gradient-to-br from-red-500/10 to-transparent">
+                    <p class="text-[10px] font-black uppercase text-red-500 mb-2 tracking-widest text-center">Transfer To UPI ID</p>
+                    <div class="bg-black/50 p-4 rounded-2xl border border-red-500/30 text-center mb-4">
+                        <h2 class="text-xl font-bold tracking-wide font-mono text-white" id="ui-upi-id">Loading...</h2>
                     </div>
+                    <button type="button" onclick="copyText(document.getElementById('ui-upi-id').innerText)" class="w-full bg-white text-red-600 py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow-md hover:bg-gray-100 transition-colors"><i class="fas fa-copy mr-2"></i> Copy UPI Address</button>
                 </div>
-                <form onsubmit="event.preventDefault(); processAdd()" class="theme-card rounded-2xl p-5 shadow-sm border border-gray-100 font-medium">
-                    <p class="text-xs font-bold accent-text mb-4 uppercase font-bold"><i class="fas fa-file-invoice"></i> Submit Payment Details</p>
-                    <label class="block text-xs font-bold text-gray-400 mb-2">UTR / TRANSACTION NUMBER</label>
-                    <input type="text" id="add-utr" required placeholder="Enter 12-digit UTR" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-4 focus-accent font-black theme-card font-black">
-                    <label class="block text-xs font-bold text-gray-400 mb-2">AMOUNT PAID (₹)</label>
-                    <input type="number" id="add-amt" required min="1" placeholder="Enter amount" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-4 focus-accent font-black theme-card font-black">
+
+                <form onsubmit="event.preventDefault(); processAdd()" class="theme-card rounded-3xl p-6 shadow-2xl border border-red-500/10">
+                    <label class="nova-label">UTR / REFERENCE NO</label>
+                    <input type="text" id="add-utr" required placeholder="Enter 12-digit UTR" class="nova-input mb-5 font-mono">
                     
-                    <label class="block text-xs font-bold text-gray-400 mb-2">UPLOAD PAYMENT SCREENSHOT</label>
+                    <label class="nova-label">DEPOSIT AMOUNT (₹)</label>
+                    <input type="number" id="add-amt" required min="1" placeholder="Enter exact amount" class="nova-input mb-6">
+                    
+                    <label class="nova-label mb-2">PAYMENT PROOF</label>
                     <input type="file" id="add-screenshot-input" class="hidden" accept="image/*" onchange="handleScreenshotUpload(event)">
-                    <button type="button" id="btn-upload-screenshot" onclick="document.getElementById('add-screenshot-input').click()" class="w-full mb-4 py-3 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border accent-border accent-text bg-transparent hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors font-black">
-                        <i class="fas fa-image"></i> Upload Screenshot
+                    <button type="button" id="btn-upload-screenshot" onclick="document.getElementById('add-screenshot-input').click()" class="w-full mb-6 py-4 px-4 rounded-xl text-xs font-black tracking-widest uppercase border-2 border-dashed border-red-500/50 text-red-400 bg-red-500/5 hover:bg-red-500/10 transition-colors flex items-center justify-center gap-2">
+                        <i class="fas fa-cloud-upload-alt text-lg"></i> Select Screenshot
                     </button>
-                    <div id="screenshot-preview-container" class="hidden mb-6 relative w-36 h-36 mx-auto rounded-xl overflow-hidden border border-gray-200 shadow-inner">
+                    <div id="screenshot-preview-container" class="hidden mb-6 relative w-40 h-40 mx-auto rounded-xl overflow-hidden border-2 border-red-500 shadow-lg">
                         <img id="screenshot-preview-img" src="" class="w-full h-full object-cover">
                     </div>
 
-                    <button type="submit" class="btn-animate w-full accent-bg text-white font-bold py-4 rounded-xl shadow-lg mb-4 font-black">SEND FOR VERIFICATION</button>
+                    <button type="submit" class="btn-animate w-full accent-bg text-white font-black py-4 rounded-xl shadow-lg uppercase tracking-widest">SUBMIT REQUEST</button>
                 </form>
             </div>
         </div>
 
-        <div id="view-bulk" class="view-section">
-            <header class="flex items-center p-4 theme-card shadow-sm sticky top-0 z-30">
-                <button onclick="showView('home')" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-800 dark:text-white"><i class="fas fa-arrow-left"></i></button>
-                <h1 class="ml-4 text-[16px] font-black tracking-wide text-contrast">BULK SEND</h1>
+        <div id="view-bulk" class="view-section relative z-10">
+            <header class="flex items-center p-4 theme-card shadow-sm sticky top-0 z-30 border-b border-red-500/20">
+                <button onclick="showView('home')" class="w-10 h-10 rounded-full flex items-center justify-center text-white bg-gray-900 border border-gray-800 transition-colors hover:bg-red-500"><i class="fas fa-arrow-left"></i></button>
+                <h1 class="ml-4 text-[16px] font-black tracking-widest text-white uppercase">MASS TRANSFER</h1>
             </header>
-            <div class="p-4">
-                <div class="theme-card rounded-xl p-4 flex justify-between items-center shadow-sm text-sm font-semibold mb-6 border border-gray-100 font-bold"><span class="text-gray-500">BALANCE</span><span class="accent-text text-lg">₹<span class="global-balance blur-none transition-all">0.00</span></span></div>
-                <form onsubmit="event.preventDefault(); processBulk()" class="theme-card rounded-2xl p-5 shadow-sm border border-gray-100 font-medium">
-                    <label class="block text-xs font-bold text-gray-400 mb-1 flex items-center gap-2"><i class="fas fa-users accent-text"></i> RECIPIENTS</label>
-                    <p class="text-[10px] accent-text font-bold mb-3 tracking-wide font-black">MOBILE (ONE PER LINE)</p>
-                    <textarea id="bulk-nums" rows="5" required placeholder="9876543210&#10;9876543211" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-5 focus-accent font-bold theme-card font-black"></textarea>
+            <div class="p-5">
+                <div class="theme-card rounded-2xl p-4 flex justify-between items-center shadow-lg border border-red-500/30 mb-6 bg-[#1a1a1a]">
+                    <span class="text-xs text-gray-400 uppercase tracking-widest font-black">BALANCE</span>
+                    <span class="text-red-500 text-xl font-black">₹<span class="global-balance blur-none transition-all">0.00</span></span>
+                </div>
+                <form onsubmit="event.preventDefault(); initiateAction('bulk')" class="theme-card rounded-3xl p-6 shadow-2xl border border-red-500/10">
+                    <label class="nova-label"><i class="fas fa-users mr-1"></i> TARGET MOBILES (1/LINE)</label>
+                    <textarea id="bulk-nums" rows="5" required placeholder="9876543210&#10;9876543211" class="nova-input mb-5 leading-relaxed font-mono tracking-widest"></textarea>
                     
-                    <label class="block text-xs font-bold text-gray-400 mb-2">AMOUNT (₹) — SAME FOR ALL</label>
-                    <input type="number" id="bulk-amt" required min="1" placeholder="0.00" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-5 focus-accent font-black theme-card font-black">
+                    <label class="nova-label"><i class="fas fa-coins mr-1"></i> AMOUNT PER USER (₹)</label>
+                    <input type="number" id="bulk-amt" required min="1" placeholder="0.00" class="nova-input mb-5">
                     
-                    <label class="block text-xs font-bold text-gray-400 mb-2">COMMENT (OPTIONAL)</label>
-                    <input type="text" id="bulk-comment" placeholder="Add a note" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-5 focus:outline-none focus-accent transition-colors theme-card font-bold">
+                    <label class="nova-label"><i class="fas fa-comment mr-1"></i> COMMENT</label>
+                    <input type="text" id="bulk-comment" placeholder="Bulk salary, bonus, etc." class="nova-input mb-8">
 
-                    <label class="block text-xs font-bold text-gray-400 mb-2">SECURITY PIN</label>
-                    <input type="password" id="bulk-pin" required maxlength="4" placeholder="••••" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center tracking-widest font-black text-lg mb-6 focus-accent theme-card font-black">
-                    
-                    <button type="submit" class="btn-animate w-full accent-bg text-white font-bold py-4 rounded-xl shadow-lg font-black">SEND TO ALL</button>
+                    <button type="submit" class="btn-animate w-full accent-bg text-white font-black py-4 rounded-xl shadow-lg uppercase tracking-widest text-sm">EXECUTE BULK SEND</button>
                 </form>
             </div>
         </div>
 
-        <div id="view-withdraw" class="view-section">
-            <header class="flex items-center p-4 theme-card shadow-sm sticky top-0 z-30">
-                <button onclick="showView('home')" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-800 dark:text-white"><i class="fas fa-arrow-left"></i></button>
-                <h1 class="ml-4 text-[16px] font-black tracking-wide text-contrast">WITHDRAW</h1>
+        <div id="view-withdraw" class="view-section relative z-10">
+            <header class="flex items-center p-4 theme-card shadow-sm sticky top-0 z-30 border-b border-red-500/20">
+                <button onclick="showView('home')" class="w-10 h-10 rounded-full flex items-center justify-center text-white bg-gray-900 border border-gray-800 transition-colors hover:bg-red-500"><i class="fas fa-arrow-left"></i></button>
+                <h1 class="ml-4 text-[16px] font-black tracking-widest text-white uppercase">FUNDS WITHDRAWAL</h1>
             </header>
-            <div class="p-4">
-                <div class="theme-card rounded-xl p-4 flex justify-between items-center shadow-sm text-sm font-semibold mb-6 border border-gray-100 font-bold"><span class="text-gray-500">AVAILABLE BALANCE</span><span class="accent-text text-lg">₹<span class="global-balance blur-none transition-all">0.00</span></span></div>
-                <form onsubmit="event.preventDefault(); processWithdraw()" class="theme-card rounded-2xl p-5 shadow-sm border border-gray-100 font-medium">
-                    <p class="text-xs font-bold accent-text mb-5 uppercase font-bold"><i class="fas fa-arrow-up"></i> Withdraw Funds</p>
-                    <label class="block text-xs font-bold text-gray-400 mb-2">UPI ID</label>
-                    <input type="text" id="with-upi" required placeholder="yourname@upi" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-4 focus-accent font-mono theme-card font-bold">
-                    <label class="block text-xs font-bold text-gray-400 mb-2">AMOUNT (₹)</label>
-                    <input type="number" id="with-amt" required min="10" placeholder="Minimum ₹10" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-5 focus-accent font-black theme-card font-black">
-                    <label class="block text-xs font-bold text-gray-400 mb-2">SECURITY PIN</label>
-                    <input type="password" id="with-pin" required maxlength="4" placeholder="••••" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center tracking-widest font-black text-lg mb-6 focus-accent theme-card font-black">
-                    <button type="submit" class="btn-animate w-full accent-bg text-white font-bold py-4 rounded-xl shadow-lg font-black">REQUEST PAYOUT</button>
+            <div class="p-5">
+                <div class="theme-card rounded-2xl p-4 flex justify-between items-center shadow-lg border border-red-500/30 mb-6 bg-[#1a1a1a]">
+                    <span class="text-xs text-gray-400 uppercase tracking-widest font-black">WITHDRAWABLE</span>
+                    <span class="text-red-500 text-xl font-black">₹<span class="global-balance blur-none transition-all">0.00</span></span>
+                </div>
+                <form onsubmit="event.preventDefault(); initiateAction('withdraw')" class="theme-card rounded-3xl p-6 shadow-2xl border border-red-500/10">
+                    <label class="nova-label"><i class="fas fa-university mr-1"></i> YOUR UPI ID</label>
+                    <input type="text" id="with-upi" required placeholder="bank@upi" class="nova-input mb-5 font-mono text-center">
+                    
+                    <label class="nova-label"><i class="fas fa-rupee-sign mr-1"></i> WITHDRAW AMOUNT</label>
+                    <input type="number" id="with-amt" required min="10" placeholder="Minimum ₹10" class="nova-input mb-8 text-xl tracking-wider text-center">
+                    
+                    <button type="submit" class="btn-animate w-full accent-bg text-white font-black py-4 rounded-xl shadow-lg uppercase tracking-widest text-sm">REQUEST WITHDRAWAL</button>
                 </form>
             </div>
         </div>
 
-        <div id="view-lifafa" class="view-section">
-            <header class="flex items-center p-4 theme-card shadow-sm sticky top-0 z-30">
-                <button onclick="showView('home')" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-800 dark:text-white"><i class="fas fa-arrow-left"></i></button>
-                <h1 class="ml-4 text-[16px] font-black tracking-wide text-contrast">✉️ LIFAFA SYSTEM</h1>
+        <div id="view-lifafa" class="view-section relative z-10">
+            <header class="flex items-center p-4 theme-card shadow-sm sticky top-0 z-30 border-b border-red-500/20">
+                <button onclick="showView('home')" class="w-10 h-10 rounded-full flex items-center justify-center text-white bg-gray-900 border border-gray-800 transition-colors hover:bg-red-500"><i class="fas fa-arrow-left"></i></button>
+                <h1 class="ml-4 text-[16px] font-black tracking-widest text-white uppercase">LIFAFA PORTAL</h1>
             </header>
-            <div class="px-4 mt-4 mb-4">
-                <div class="flex theme-card rounded-xl p-1 gap-1 border border-gray-100 shadow-sm font-bold">
-                    <button onclick="switchLifafaTab('lifafa-create')" id="tab-lifafa-create" class="flex-1 py-2.5 text-sm font-bold rounded-lg transition-all tab-btn active accent-bg text-white">CREATE</button>
-                    <button onclick="switchLifafaTab('lifafa-history')" id="tab-lifafa-history" class="flex-1 py-2.5 text-sm font-bold rounded-lg transition-all tab-btn text-gray-500 hover:bg-gray-50">MY LIFAFAS</button>
+            <div class="px-5 mt-5 mb-5">
+                <div class="flex bg-[#121212] rounded-xl p-1 gap-1 border border-red-500/20 shadow-lg">
+                    <button onclick="switchLifafaTab('lifafa-create')" id="tab-lifafa-create" class="flex-1 py-3 text-xs font-black tracking-widest uppercase rounded-lg transition-all tab-btn active accent-bg text-white">Create</button>
+                    <button onclick="switchLifafaTab('lifafa-history')" id="tab-lifafa-history" class="flex-1 py-3 text-xs font-black tracking-widest uppercase rounded-lg transition-all tab-btn text-gray-500 hover:text-white">History</button>
                 </div>
             </div>
 
-            <div id="lifafa-create" class="tab-content active px-4 pb-10">
-                <div class="theme-card rounded-2xl p-6 text-center shadow-sm border border-gray-100 mb-4 font-bold">
-                    <p class="text-[10px] font-bold uppercase opacity-90 mb-1 tracking-wider text-gray-400 font-bold">AVAILABLE BALANCE</p>
-                    <div class="text-4xl font-black tracking-tight accent-text">₹<span class="global-balance blur-none transition-all">0.00</span></div>
-                </div>
-                
-                <div class="theme-card border border-blue-500 text-blue-500 p-4 rounded-2xl text-[11px] font-black mb-4 shadow-sm flex items-start gap-3">
-                    <i class="fas fa-info-circle text-lg mt-0.5"></i>
-                    <p>Make <span class="font-mono bg-blue-500 text-white px-1 py-0.5 rounded">@NovaPayAlertBot</span> an admin in your channel to allow verification.</p>
+            <div id="lifafa-create" class="tab-content active px-5 pb-10">
+                <div class="theme-card rounded-2xl p-4 text-center shadow-lg border border-red-500/30 mb-6 bg-[#1a1a1a]">
+                    <p class="text-[10px] font-black tracking-widest text-gray-400 uppercase mb-1">Max Capacity</p>
+                    <div class="text-3xl font-black tracking-tight text-red-500">₹<span class="global-balance blur-none transition-all">0.00</span></div>
                 </div>
 
                 <div id="lifafa-create-form-wrapper">
-                    <form onsubmit="event.preventDefault(); processLifafaCreate()" class="theme-card rounded-2xl p-5 shadow-sm border border-gray-100 font-medium">
+                    <form onsubmit="event.preventDefault(); initiateAction('lifafa')" class="theme-card rounded-3xl p-6 shadow-2xl border border-red-500/10">
                         
-                        <label class="block text-[10px] font-black text-gray-400 mb-2 uppercase">Lifafa Type</label>
-                        <select id="lif-type" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus-accent font-black theme-card mb-4" onchange="toggleLifafaTypeUI()">
-                            <option value="standard">Standard (Fixed Amount)</option>
-                            <option value="scratch">Scratch Card (Random)</option>
-                            <option value="coin">Coin Toss (Double or Nothing)</option>
+                        <label class="nova-label">Distribution Mode</label>
+                        <select id="lif-type" class="nova-input mb-5" onchange="toggleLifafaTypeUI()">
+                            <option value="standard">Fixed Value (Standard)</option>
+                            <option value="scratch">Random Luck (Scratch)</option>
+                            <option value="coin">Double or Nothing (Coin)</option>
                         </select>
 
-                        <div id="lif-amt-standard-wrapper" class="mb-4">
-                            <label class="block text-[10px] font-black text-gray-400 mb-2 uppercase">Amount / User (₹)</label>
-                            <input type="number" id="lif-amt" min="1" placeholder="e.g. 10" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus-accent font-black theme-card">
+                        <div id="lif-amt-standard-wrapper" class="mb-5">
+                            <label class="nova-label">Base Value Per User (₹)</label>
+                            <input type="number" id="lif-amt" min="1" placeholder="0.00" class="nova-input">
                         </div>
 
-                        <div id="lif-amt-random-wrapper" class="grid grid-cols-2 gap-4 mb-4 hidden">
+                        <div id="lif-amt-random-wrapper" class="grid grid-cols-2 gap-4 mb-5 hidden">
                             <div>
-                                <label class="block text-[10px] font-black text-gray-400 mb-2 uppercase">Min Amount (₹)</label>
-                                <input type="number" id="lif-min-amt" min="1" placeholder="e.g. 5" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus-accent font-black theme-card">
+                                <label class="nova-label">Min (₹)</label>
+                                <input type="number" id="lif-min-amt" min="1" placeholder="1.00" class="nova-input">
                             </div>
                             <div>
-                                <label class="block text-[10px] font-black text-gray-400 mb-2 uppercase">Max Amount (₹)</label>
-                                <input type="number" id="lif-max-amt" min="1" placeholder="e.g. 50" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus-accent font-black theme-card">
+                                <label class="nova-label">Max (₹)</label>
+                                <input type="number" id="lif-max-amt" min="1" placeholder="10.00" class="nova-input">
                             </div>
                         </div>
 
-                        <label class="block text-[10px] font-black text-gray-400 mb-2 uppercase">Total Users Limit</label>
-                        <input type="number" id="lif-users" required min="1" placeholder="e.g. 100" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus-accent font-black theme-card font-bold mb-4">
+                        <label class="nova-label">Total Claimers Allowed</label>
+                        <input type="number" id="lif-users" required min="1" placeholder="e.g. 50" class="nova-input mb-6">
                         
-                        <div class="mb-5 theme-card rounded-xl p-3 border border-blue-500 flex flex-col gap-3 font-bold">
-                            <div class="flex items-center justify-between">
+                        <div class="mb-6 bg-blue-900/10 rounded-2xl p-4 border border-blue-500/30">
+                            <div class="flex items-center justify-between mb-2">
                                 <div>
-                                    <p class="text-xs font-bold text-blue-500"><i class="fas fa-share-alt"></i> Refer & Earn</p>
-                                    <p class="text-[10px] text-gray-400">Users earn when invited friends claim</p>
+                                    <p class="text-xs font-black text-blue-400 uppercase tracking-widest"><i class="fas fa-link"></i> Referral Bonus</p>
                                 </div>
                                 <label class="relative inline-flex items-center cursor-pointer">
                                   <input type="checkbox" id="lif-refer-toggle" class="sr-only peer" onchange="document.getElementById('lif-refer-amt-wrapper').classList.toggle('hidden', !this.checked)">
-                                  <div class="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
+                                  <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500 shadow-inner"></div>
                                 </label>
                             </div>
-                            <div id="lif-refer-amt-wrapper" class="hidden">
-                                <label class="block text-[10px] font-black text-blue-500 mb-1 uppercase">Amount Per Refer (₹)</label>
-                                <input type="number" id="lif-refer-amt" min="1" placeholder="e.g. 2" class="w-full theme-card border border-blue-500 rounded-lg px-3 py-2 text-sm focus-accent font-black">
+                            <div id="lif-refer-amt-wrapper" class="hidden mt-3">
+                                <label class="nova-label !text-blue-400">Bonus Per Invite (₹)</label>
+                                <input type="number" id="lif-refer-amt" min="1" placeholder="Amount" class="nova-input !border-blue-500/50">
                             </div>
                         </div>
 
-                        <div class="mb-4">
-                            <label class="block text-[10px] font-black text-gray-400 mb-2 uppercase">Required Channels to Join (Max 20)</label>
-                            <div id="lif-channels-container" class="space-y-2 mb-2">
+                        <div class="mb-6">
+                            <label class="nova-label">Mandatory Channels</label>
+                            <div id="lif-channels-container" class="space-y-3 mb-3">
                                 <div class="flex items-center gap-2">
-                                    <input type="text" class="lif-channel-input w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus-accent theme-card font-mono" placeholder="e.g. @yourchannel">
-                                    <button type="button" onclick="removeLifafaChannelInput(this)" class="text-red-500 p-2"><i class="fas fa-trash"></i></button>
+                                    <input type="text" class="lif-channel-input flex-1 bg-[#0f0f0f] border border-[#2a2a2a] text-white rounded-xl px-4 py-3 text-sm font-mono focus:border-red-500 outline-none" placeholder="@channel_username">
+                                    <button type="button" onclick="removeLifafaChannelInput(this)" class="w-12 h-12 bg-red-900/20 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors"><i class="fas fa-trash"></i></button>
                                 </div>
                             </div>
-                            <button type="button" onclick="addLifafaChannelInput()" class="text-xs font-black accent-text py-2 px-1 hover:underline"><i class="fas fa-plus mr-1"></i> Add More Channel</button>
+                            <button type="button" onclick="addLifafaChannelInput()" class="text-xs font-black text-red-400 uppercase tracking-widest hover:text-white"><i class="fas fa-plus-circle mr-1"></i> Add Requirement</button>
                         </div>
 
-                        <label class="block text-[10px] font-black text-gray-400 mb-2 uppercase">Access Code / Password (Optional)</label>
-                        <input type="text" id="lif-password" placeholder="Leave blank if none" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-4 focus-accent font-black theme-card">
+                        <label class="nova-label">Secret Access Code</label>
+                        <input type="text" id="lif-password" placeholder="Leave blank if public" class="nova-input mb-8 font-mono tracking-widest text-center">
                         
-                        <label class="block text-xs font-bold text-gray-400 mb-2">SECURITY PIN</label>
-                        <input type="password" id="lif-pin" required maxlength="4" placeholder="••••" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center tracking-widest font-black text-lg mb-6 focus-accent theme-card font-black">
-                        <button type="submit" class="btn-animate w-full accent-bg text-white font-bold py-4 rounded-xl shadow-lg font-black"><i class="fas fa-envelope-open-text mr-2"></i>CREATE & PAY</button>
+                        <button type="submit" class="btn-animate w-full accent-bg text-white font-black py-4 rounded-xl shadow-lg uppercase tracking-widest text-sm">GENERATE & DEDUCT</button>
                     </form>
                 </div>
 
-                <div id="lifafa-success-box" class="hidden mt-2 theme-card rounded-2xl p-5 border-2 border-green-400 shadow-[0_0_15px_rgba(74,222,128,0.2)] bg-green-50/10 text-center animate-[slideUpFade_0.4s_ease-out]">
-                    <div class="w-12 h-12 bg-green-100 text-green-500 rounded-full flex items-center justify-center text-xl mx-auto mb-3"><i class="fas fa-check"></i></div>
-                    <h3 class="font-black text-sm text-green-500 mb-2 uppercase">Lifafa Created Successfully!</h3>
-                    <p class="text-[10px] font-bold text-gray-500 mb-3">Share this link to your users to let them claim.</p>
-                    <div class="relative">
-                        <input type="text" id="lifafa-result-link" readonly class="w-full bg-white dark:bg-slate-900 border border-gray-200 rounded-xl pr-12 pl-4 py-3 text-xs focus-accent font-mono text-gray-600 dark:text-gray-300">
-                        <button type="button" onclick="copyText(document.getElementById('lifafa-result-link').value)" class="absolute right-2 top-2 w-8 h-8 flex items-center justify-center bg-gray-100 dark:bg-slate-800 rounded-lg text-gray-500 hover:text-green-500 transition-colors"><i class="fas fa-copy"></i></button>
+                <div id="lifafa-success-box" class="hidden mt-2 theme-card rounded-3xl p-6 border-2 border-green-500/50 shadow-[0_0_30px_rgba(34,197,94,0.15)] bg-green-900/10 text-center animate-[slideUpFade_0.4s_ease-out]">
+                    <div class="w-16 h-16 bg-green-500 text-white rounded-full flex items-center justify-center text-2xl mx-auto mb-4 shadow-lg"><i class="fas fa-check"></i></div>
+                    <h3 class="font-black text-sm text-green-400 mb-2 uppercase tracking-widest">Lifafa Ready!</h3>
+                    <p class="text-xs font-bold text-gray-400 mb-4">Copy and share this secure link.</p>
+                    <div class="relative mb-6">
+                        <input type="text" id="lifafa-result-link" readonly class="w-full bg-black border border-green-500/30 rounded-xl pr-14 pl-4 py-4 text-xs font-mono text-green-300 focus:outline-none">
+                        <button type="button" onclick="copyText(document.getElementById('lifafa-result-link').value)" class="absolute right-2 top-2 w-10 h-10 flex items-center justify-center bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"><i class="fas fa-copy"></i></button>
                     </div>
-                    <button type="button" onclick="resetLifafaCreationForm()" class="mt-4 text-[10px] font-black accent-text uppercase underline">Create Another</button>
+                    <button type="button" onclick="resetLifafaCreationForm()" class="text-xs font-black text-white bg-gray-800 px-6 py-3 rounded-full uppercase tracking-widest hover:bg-gray-700">Create Another</button>
                 </div>
             </div>
 
-            <div id="lifafa-history" class="tab-content px-4">
-                <div class="mb-4 text-left px-1 flex justify-between items-center">
-                    <h3 class="font-black text-xs tracking-wider text-gray-400 uppercase">My Created Lifafas</h3>
-                    <button type="button" onclick="renderMyLifafas()" class="text-[10px] font-black accent-text"><i class="fas fa-sync-alt mr-1"></i>Refresh</button>
-                </div>
-                <div id="my-lifafa-list" class="space-y-4 pb-20 font-semibold">
-                    </div>
+            <div id="lifafa-history" class="tab-content px-5">
+                <button type="button" onclick="renderMyLifafas()" class="w-full theme-card border border-red-500/20 text-red-500 font-black py-3 rounded-xl mb-4 uppercase tracking-widest text-xs hover:bg-red-500 hover:text-white transition-colors"><i class="fas fa-sync-alt mr-2"></i>Refresh List</button>
+                <div id="my-lifafa-list" class="space-y-4 pb-20 font-semibold"></div>
             </div>
         </div>
 
-        <div id="view-gift" class="view-section">
-            <header class="flex items-center p-4 theme-card shadow-sm sticky top-0 z-30">
-                <button onclick="showView('home')" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-800 dark:text-white"><i class="fas fa-arrow-left"></i></button>
-                <h1 class="ml-4 text-[16px] font-black tracking-wide text-contrast">🎁 GIFT CODE</h1>
+        <div id="view-gift" class="view-section relative z-10">
+            <header class="flex items-center p-4 theme-card shadow-sm sticky top-0 z-30 border-b border-red-500/20">
+                <button onclick="showView('home')" class="w-10 h-10 rounded-full flex items-center justify-center text-white bg-gray-900 border border-gray-800 transition-colors hover:bg-red-500"><i class="fas fa-arrow-left"></i></button>
+                <h1 class="ml-4 text-[16px] font-black tracking-widest text-white uppercase">GIFT CENTER</h1>
             </header>
-            <div class="px-4 mt-4 mb-4 font-bold">
-                <div class="flex theme-card rounded-xl p-1 gap-1 border border-gray-100 shadow-sm">
-                    <button onclick="switchTab('gift-create')" id="tab-gift-create" class="flex-1 py-2.5 text-sm font-bold rounded-lg transition-all tab-btn active accent-bg text-white">CREATE</button>
-                    <button onclick="switchTab('gift-claim')" id="tab-gift-claim" class="flex-1 py-2.5 text-sm font-bold rounded-lg transition-all tab-btn text-gray-500 hover:bg-gray-50">CLAIM</button>
+            <div class="px-5 mt-5 mb-5 font-bold">
+                <div class="flex bg-[#121212] rounded-xl p-1 gap-1 border border-red-500/20 shadow-lg">
+                    <button onclick="switchTab('gift-create')" id="tab-gift-create" class="flex-1 py-3 text-xs font-black tracking-widest uppercase rounded-lg transition-all tab-btn active accent-bg text-white">Generate</button>
+                    <button onclick="switchTab('gift-claim')" id="tab-gift-claim" class="flex-1 py-3 text-xs font-black tracking-widest uppercase rounded-lg transition-all tab-btn text-gray-500 hover:text-white">Redeem</button>
                 </div>
             </div>
 
-            <div id="gift-create" class="tab-content active px-4 font-medium">
-                <div class="theme-card rounded-2xl p-6 text-center shadow-sm border border-gray-100 mb-6 font-bold">
-                    <p class="text-[10px] font-bold uppercase opacity-90 mb-1 tracking-wider text-gray-400 font-bold">AVAILABLE BALANCE</p>
-                    <div class="text-4xl font-black tracking-tight accent-text">₹<span class="global-balance blur-none transition-all">0.00</span></div>
+            <div id="gift-create" class="tab-content active px-5 font-medium">
+                <div class="theme-card rounded-2xl p-4 text-center shadow-lg border border-red-500/30 mb-6 bg-[#1a1a1a]">
+                    <p class="text-[10px] font-black tracking-widest text-gray-400 uppercase mb-1">Source Wallet</p>
+                    <div class="text-3xl font-black tracking-tight text-red-500">₹<span class="global-balance blur-none transition-all">0.00</span></div>
                 </div>
-                <form onsubmit="event.preventDefault(); processGiftCreate()" class="theme-card rounded-2xl p-5 shadow-sm border border-gray-100">
-                    <label class="block text-xs font-bold text-gray-400 mb-2">NUMBER OF USERS</label>
-                    <input type="number" id="gift-users" required min="1" placeholder="e.g. 5" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-4 focus-accent font-black theme-card font-bold">
-                    <label class="block text-xs font-bold text-gray-400 mb-2">AMOUNT PER USER (₹)</label>
-                    <input type="number" id="gift-amt" required min="1" placeholder="e.g. 10" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-4 focus-accent font-black theme-card font-bold">
+                <form onsubmit="event.preventDefault(); initiateAction('gift')" class="theme-card rounded-3xl p-6 shadow-2xl border border-red-500/10">
+                    <label class="nova-label"><i class="fas fa-users mr-1"></i> REDEMPTION LIMIT</label>
+                    <input type="number" id="gift-users" required min="1" placeholder="How many users?" class="nova-input mb-5">
                     
-                    <label class="block text-xs font-bold text-gray-400 mb-2">SECURITY PIN</label>
-                    <input type="password" id="gift-pin" required maxlength="4" placeholder="••••" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center tracking-widest font-black text-lg mb-6 focus-accent theme-card font-black">
-                    <button type="submit" class="btn-animate w-full accent-bg text-white font-bold py-4 rounded-xl shadow-lg font-black"><i class="fas fa-magic mr-2"></i>GENERATE CODE</button>
+                    <label class="nova-label"><i class="fas fa-coins mr-1"></i> VALUE PER REDEMPTION</label>
+                    <input type="number" id="gift-amt" required min="1" placeholder="₹ Amount" class="nova-input mb-8">
+                    
+                    <button type="submit" class="btn-animate w-full accent-bg text-white font-black py-4 rounded-xl shadow-lg uppercase tracking-widest text-sm"><i class="fas fa-magic mr-2"></i> ISSUE GIFT CODE</button>
                 </form>
             </div>
 
-            <div id="gift-claim" class="tab-content px-4 font-bold">
-                <form onsubmit="event.preventDefault(); processGiftClaim()" class="theme-card rounded-2xl p-6 shadow-sm border border-gray-100 text-center">
-                    <div class="w-20 h-20 theme-card accent-text border border-gray-100 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 shadow-inner"><i class="fas fa-gift"></i></div>
-                    <label class="block text-xs font-bold text-gray-400 mb-3 tracking-widest uppercase">Enter 5-Digit Code</label>
-                    <input type="text" id="claim-code" required maxlength="5" placeholder="E.G. X8K9M" class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-5 text-center tracking-[0.3em] uppercase text-2xl font-black mb-8 focus-accent shadow-inner theme-card font-black">
-                    <button type="submit" class="btn-animate w-full accent-bg text-white font-black py-4 rounded-xl shadow-lg text-lg font-black">CLAIM REWARD</button>
+            <div id="gift-claim" class="tab-content px-5 font-bold">
+                <form onsubmit="event.preventDefault(); processGiftClaim()" class="theme-card rounded-3xl p-8 shadow-2xl border border-red-500/10 text-center mt-10">
+                    <div class="w-24 h-24 bg-red-900/20 text-red-500 border-2 border-red-500/50 rounded-full flex items-center justify-center text-4xl mx-auto mb-8 shadow-[0_0_20px_rgba(239,68,68,0.2)]"><i class="fas fa-gift animate-pulse"></i></div>
+                    <label class="block text-xs font-black text-gray-400 mb-4 tracking-[0.2em] uppercase">Enter 5-Digit Promo Code</label>
+                    <input type="text" id="claim-code" required maxlength="5" placeholder="X8K9M" class="w-full bg-[#0a0a0a] border border-[#2a2a2a] rounded-2xl px-4 py-6 text-center tracking-[0.5em] uppercase text-3xl font-black mb-8 focus:border-red-500 outline-none text-white shadow-inner">
+                    <button type="submit" class="btn-animate w-full accent-bg text-white font-black py-4 rounded-xl shadow-lg text-sm tracking-widest uppercase">REDEEM NOW</button>
                 </form>
             </div>
         </div>
 
-        <div id="view-api" class="view-section">
-            <header class="flex items-center p-4 theme-card shadow-sm sticky top-0 z-30">
-                <button onclick="showView('home')" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-800 dark:text-white"><i class="fas fa-arrow-left"></i></button>
-                <h1 class="ml-4 text-[16px] font-black tracking-wide text-contrast">API SETTINGS</h1>
+        <div id="view-api" class="view-section relative z-10">
+            <header class="flex items-center p-4 theme-card shadow-sm sticky top-0 z-30 border-b border-red-500/20">
+                <button onclick="showView('home')" class="w-10 h-10 rounded-full flex items-center justify-center text-white bg-gray-900 border border-gray-800 transition-colors hover:bg-red-500"><i class="fas fa-arrow-left"></i></button>
+                <h1 class="ml-4 text-[16px] font-black tracking-widest text-white uppercase">DEVELOPER API</h1>
             </header>
-            <div class="p-4 space-y-4">
-                <div class="theme-card rounded-2xl p-5 shadow-sm border border-gray-100 font-bold">
-                    <p class="text-[10px] text-gray-400 font-bold mb-2 tracking-wider uppercase">WALLET TRANSFER API</p>
-                    <p class="text-sm font-mono text-gray-300 break-all leading-relaxed mb-4 p-3 bg-slate-900 rounded-xl shadow-inner" id="ui-api-url-full">
-                        https://nova-wallet-pn77.vercel.app/api?key=<span class="accent-text" id="ui-api-key-url">NW-PENDING</span>&paytm=<span class="text-green-400">{number}</span>&amount=<span class="text-green-400">{amount}</span>&comment=<span class="text-green-400">{comment}</span>
+            <div class="p-5 space-y-6">
+                <div class="theme-card rounded-3xl p-6 shadow-2xl border border-red-500/10">
+                    <p class="text-xs font-black text-red-500 mb-4 tracking-widest uppercase border-b border-red-500/20 pb-2"><i class="fas fa-server mr-2"></i> Payout Endpoint</p>
+                    <p class="text-xs font-mono text-gray-300 break-all leading-relaxed mb-4 p-4 bg-black rounded-xl shadow-inner border border-gray-800" id="ui-api-url-full">
+                        https://nova-wallet-pn77.vercel.app/api?key=<span class="text-red-400 font-bold" id="ui-api-key-url">NW-PENDING</span>&paytm=<span class="text-green-400">{number}</span>&amount=<span class="text-green-400">{amount}</span>&comment=<span class="text-green-400">{comment}</span>
                     </p>                    
-                    <div class="text-xs font-mono text-gray-500 mb-2 pl-2 space-y-1 font-medium">
-                        <p>transaction :- receiver number</p>
-                        <p>Amount :- amount</p>
-                        <p>Comment :- comment</p>
+                    <div class="text-[10px] font-mono text-gray-500 pl-2 space-y-2 uppercase tracking-wide">
+                        <p><span class="text-gray-300">paytm</span> : User's Nova Number</p>
+                        <p><span class="text-gray-300">amount</span> : Value in ₹</p>
+                        <p><span class="text-gray-300">comment</span> : Txn remark</p>
                     </div>
                 </div>
 
-                <div class="theme-card rounded-2xl p-5 shadow-sm border border-gray-100 font-medium">
-                    <p class="text-[10px] text-gray-400 font-bold mb-2 tracking-wider uppercase">UPI WITHDRAWAL API</p>
-                    <p class="text-sm font-mono text-gray-300 break-all leading-relaxed mb-4 p-3 bg-slate-900 rounded-xl shadow-inner" id="ui-api-url-upi">
-                        https://nova-wallet-pn77.vercel.app/api?token=<span class="accent-text" id="ui-api-key-upi">NW-PENDING</span>&upi_id=<span class="text-green-400">{upi_id}</span>&amount=<span class="text-green-400">{amount}</span>&comment=<span class="text-green-400">{comment}</span>
+                <div class="theme-card rounded-3xl p-6 shadow-2xl border border-red-500/10">
+                    <p class="text-xs font-black text-red-500 mb-4 tracking-widest uppercase border-b border-red-500/20 pb-2"><i class="fas fa-university mr-2"></i> Bank/UPI Endpoint</p>
+                    <p class="text-xs font-mono text-gray-300 break-all leading-relaxed mb-4 p-4 bg-black rounded-xl shadow-inner border border-gray-800" id="ui-api-url-upi">
+                        https://nova-wallet-pn77.vercel.app/api?token=<span class="text-red-400 font-bold" id="ui-api-key-upi">NW-PENDING</span>&upi_id=<span class="text-green-400">{upi_id}</span>&amount=<span class="text-green-400">{amount}</span>&comment=<span class="text-green-400">{comment}</span>
                     </p>
-                    <div class="text-xs font-mono text-gray-500 pl-2 space-y-1">
-                        <p>Upi_id :- reciver upi id</p>
-                        <p>Amount :- amount</p>
-                        <p>Comment :- comment</p>
-                    </div>
                 </div>
 
-                <div class="theme-card rounded-2xl p-5 shadow-sm border border-gray-100">
-                    <p class="text-xs font-bold text-gray-400 mb-4 uppercase"><i class="fas fa-key accent-text"></i> YOUR CURRENT API KEY</p>
-                    <div class="theme-card rounded-xl p-4 flex justify-between items-center border border-gray-200 mb-5 font-bold">
-                        <div>
-                            <p class="text-[10px] accent-text font-bold mb-1 tracking-wider">SECRET KEY</p>
-                            <p class="accent-text font-mono font-black tracking-widest text-lg" id="ui-api-key-display">NW-PENDING</p>
-                        </div>
+                <div class="theme-card rounded-3xl p-6 shadow-2xl border border-red-500/30 bg-red-900/10">
+                    <p class="text-xs font-black text-white mb-4 uppercase tracking-widest text-center">MASTER SECRET KEY</p>
+                    <div class="bg-black rounded-2xl p-5 border border-red-500/50 mb-5 text-center shadow-inner">
+                        <p class="text-red-500 font-mono font-black tracking-widest text-xl drop-shadow-md" id="ui-api-key-display">NW-PENDING</p>
                     </div>
-                    <button onclick="regenerateApiKey()" class="btn-animate w-full border-2 accent-border accent-text font-bold py-3.5 rounded-xl font-bold">REGENERATE API KEY</button>
+                    <button onclick="regenerateApiKey()" class="btn-animate w-full bg-white text-red-600 font-black py-4 rounded-xl shadow-lg uppercase tracking-widest text-sm hover:bg-gray-200 transition-colors"><i class="fas fa-sync-alt mr-2"></i> RE-ROLL KEY</button>
                 </div>
             </div>
         </div>
 
-        <div id="view-keeper" class="view-section min-h-screen theme-card font-bold">
-            <header class="flex items-center p-4 theme-card shadow-sm sticky top-0 z-30">
-                <button onclick="showView('home')" class="w-8 h-8 flex items-center justify-center text-slate-800 dark:text-white rounded-full"><i class="fas fa-arrow-left"></i></button>
-                <div class="w-6 h-6 ml-4 accent-bg text-white rounded-full flex items-center justify-center italic font-bold text-xs"><i class="fas fa-shield-alt text-[10px]"></i></div>
-                <h1 class="ml-2 text-[16px] font-bold tracking-wide text-contrast">Balance Keeper</h1>
+        <div id="view-keeper" class="view-section min-h-screen theme-card font-bold relative z-10">
+            <header class="flex items-center p-4 theme-card shadow-sm sticky top-0 z-30 border-b border-red-500/20">
+                <button onclick="showView('home')" class="w-10 h-10 rounded-full flex items-center justify-center text-white bg-gray-900 border border-gray-800 transition-colors hover:bg-red-500"><i class="fas fa-arrow-left"></i></button>
+                <div class="w-8 h-8 ml-4 accent-bg text-white rounded-full flex items-center justify-center shadow-md"><i class="fas fa-shield-alt text-sm"></i></div>
+                <h1 class="ml-3 text-[16px] font-black tracking-widest text-white uppercase">NOVA VAULT</h1>
             </header>
-            <div class="p-4 font-bold">
-                <div class="flex gap-4 mb-6">
-                    <div class="flex-1 theme-card rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col items-center justify-center">
-                        <div class="w-10 h-10 theme-card accent-text border border-gray-200 rounded-lg flex items-center justify-center mb-2"><i class="fas fa-wallet"></i></div>
-                        <p class="text-[10px] text-gray-400 font-bold tracking-wider mb-1 font-bold">WALLET</p>
-                        <p class="text-xl font-black">₹<span class="global-balance blur-none transition-all">0.00</span></p>
+            <div class="p-5 font-bold">
+                <div class="flex gap-4 mb-8">
+                    <div class="flex-1 theme-card rounded-3xl p-5 shadow-xl border border-gray-800 flex flex-col items-center justify-center bg-gradient-to-b from-gray-900 to-black">
+                        <div class="text-gray-500 mb-2"><i class="fas fa-wallet text-2xl"></i></div>
+                        <p class="text-[9px] text-gray-400 font-black tracking-widest mb-1 uppercase">MAIN WALLET</p>
+                        <p class="text-xl font-black text-white">₹<span class="global-balance blur-none transition-all">0.00</span></p>
                     </div>
-                    <div class="flex-1 theme-card rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col items-center justify-center">
-                        <div class="w-10 h-10 theme-card accent-text border border-gray-200 rounded-lg flex items-center justify-center mb-2"><i class="fas fa-vault"></i></div>
-                        <p class="text-[10px] text-gray-400 font-bold tracking-wider mb-1 font-bold">KEEPER</p>
-                        <p class="text-xl font-black">₹<span class="global-keeper-balance">0.00</span></p>
+                    <div class="flex-1 theme-card rounded-3xl p-5 shadow-xl border border-red-500/30 flex flex-col items-center justify-center bg-gradient-to-b from-red-900/20 to-black relative overflow-hidden">
+                        <div class="absolute -right-4 -top-4 text-red-500/10 text-6xl"><i class="fas fa-vault"></i></div>
+                        <div class="text-red-500 mb-2 z-10"><i class="fas fa-vault text-2xl"></i></div>
+                        <p class="text-[9px] text-red-400 font-black tracking-widest mb-1 uppercase z-10">SECURE VAULT</p>
+                        <p class="text-xl font-black text-white z-10">₹<span class="global-keeper-balance">0.00</span></p>
                     </div>
                 </div>
-                <div class="theme-card rounded-3xl p-4 shadow-sm border border-gray-100 mb-6 font-bold">
-                    <div class="flex theme-card rounded-xl p-1 gap-1 mb-4 border border-gray-200">
-                        <button onclick="switchKeeperTab('keeper-lock')" id="btn-keeper-lock" class="flex-1 py-3 text-xs text-gray-500 rounded-lg keeper-tab-btn active"><i class="fas fa-lock mr-1"></i> LOCK</button>
-                        <button onclick="switchKeeperTab('keeper-with')" id="btn-keeper-with" class="flex-1 py-3 text-xs text-gray-500 rounded-lg keeper-tab-btn"><i class="fas fa-unlock mr-1"></i> WITHDRAW</button>
-                    </div>
-                    <div id="keeper-lock" class="keeper-tab-content active font-medium">
-                        <form onsubmit="event.preventDefault(); processKeeperLock()">
-                            <div class="relative mb-4"><span class="absolute left-4 top-3.5 text-gray-400 font-bold">₹</span><input type="number" id="kl-amt" required class="w-full bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-4 py-3 focus-accent font-black theme-card font-bold"></div>
-                            <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase font-bold">Security Pin</label>
-                            <input type="password" id="kl-pin" required maxlength="4" placeholder="••••" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center tracking-widest font-black text-lg mb-6 focus-accent theme-card font-black">
-                            <button type="submit" class="w-full accent-bg text-white font-bold py-4 rounded-xl shadow-lg">LOCK BALANCE</button>
-                        </form>
-                    </div>
-                    <div id="keeper-with" class="keeper-tab-content font-medium">
-                        <form onsubmit="event.preventDefault(); processKeeperWithdraw()">
-                            <div class="relative mb-4"><span class="absolute left-4 top-3.5 text-gray-400 font-bold">₹</span><input type="number" id="kw-amt" required class="w-full bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-4 py-3 focus-accent font-black theme-card font-bold"></div>
-                            <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase font-bold">Security Pin</label>
-                            <input type="password" id="kw-pin" required maxlength="4" placeholder="••••" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center tracking-widest font-black text-lg mb-6 focus-accent theme-card font-black">
-                            <button type="submit" class="w-full bg-gray-800 text-white font-bold py-4 rounded-xl shadow-md font-bold">WITHDRAW BALANCE</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="view-txn" class="view-section min-h-screen relative overflow-hidden theme-card">
-            <header class="flex items-center p-4 sticky top-0 z-30">
-                <button onclick="showView('home')" class="w-10 h-10 rounded-full shadow-md flex items-center justify-center text-slate-800 dark:text-white border border-gray-100"><i class="fas fa-arrow-left"></i></button>
-            </header>
-            <div class="p-6 pt-12 text-center relative z-10 font-bold">
-                <div class="w-20 h-20 theme-card accent-text rounded-3xl mx-auto flex items-center justify-center text-4xl mb-6 shadow-inner border border-gray-100"><i class="fas fa-search-dollar"></i></div>
-                <h1 class="text-4xl font-black italic tracking-tight mb-2 text-contrast">NOVA <span class="accent-text">WALLET</span></h1>
-                <p class="text-[11px] font-bold text-gray-400 uppercase tracking-[0.3em] mb-12">Transaction Lookup</p>
-                <form onsubmit="event.preventDefault(); searchTxn()" class="theme-card rounded-3xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-gray-100 text-left font-medium">
-                    <label class="block text-xs font-bold text-gray-400 mb-3 tracking-wide">TRANSACTION ID</label>
-                    <input type="text" id="search-txn-id" required placeholder="E.G. TXN8F3K92A" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-4 text-sm mb-6 focus-accent uppercase font-mono theme-card font-black">
-                    <button type="submit" class="btn-animate w-full accent-bg text-white font-black py-4 rounded-xl shadow-lg font-black">LOCATE</button>
-                </form>
-            </div>
-        </div>
-
-        <div id="view-myprofile" class="view-section min-h-screen theme-card font-bold">
-            <header class="flex items-center p-4 sticky top-0 z-30 border-b border-gray-800 theme-card">
-                <button onclick="showView('home')" class="w-8 h-8 hover:bg-gray-800 text-white rounded-full flex items-center justify-center shadow-sm transition-colors"><i class="fas fa-arrow-left"></i></button>
-                <h1 class="ml-4 text-[16px] font-black tracking-wide text-contrast"><i class="fas fa-user-circle mr-1.5 text-sm accent-text"></i> MY PROFILE</h1>
-            </header>
-            <div class="p-6 flex flex-col items-center">
-                <div class="relative w-28 h-28 mx-auto mb-4 group cursor-pointer" onclick="document.getElementById('profile-dp-input').click()">
-                    <div class="w-full h-full rounded-full overflow-hidden border-4 border-red-500 shadow-xl relative bg-gray-900 flex items-center justify-center">
-                        <img id="profile-dashboard-dp" src="" class="w-full h-full object-cover hidden" alt="Profile Picture">
-                        <span id="profile-dashboard-initial" class="text-4xl font-black accent-text uppercase font-black">U</span>
-                        
-                        <div class="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <i class="fas fa-camera text-white text-lg mb-1"></i>
-                            <span class="text-white text-[9px] font-bold uppercase tracking-wider font-black font-black">Upload DP</span>
-                        </div>
-                    </div>
-                </div>
-                <input type="file" id="profile-dp-input" class="hidden" accept="image/*" onchange="processLocalDpUpload(event)">
                 
-                <h2 class="font-black text-xl mt-2 mb-1 text-contrast flex items-center gap-2 font-black">
-                    <span id="profile-display-name">User Name</span>
-                    <i class="fas fa-edit text-xs text-gray-500 cursor-pointer hover:text-red-500 transition-colors" onclick="editProfileName()"></i>
-                </h2>
-
-                <div class="profile-pill" id="profile-lbl-phone-pill">...</div>
-
-                <div class="w-full max-w-sm mt-8 theme-card p-5 rounded-2xl border border-gray-800 shadow-lg">
-                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-3">Update Email ID</p>
-                    <div class="flex flex-col gap-3">
-                        <input type="email" id="profile-edit-email" placeholder="Enter new email" class="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm focus-accent text-white font-bold">
-                        <button onclick="updateProfileEmail()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black text-xs shadow-md transition-transform hover:scale-105 uppercase tracking-wide"><i class="fas fa-envelope mr-1"></i> Update Email</button>
+                <div class="theme-card rounded-3xl p-6 shadow-2xl border border-red-500/10 font-bold bg-[#151515]">
+                    <div class="flex bg-black rounded-xl p-1 gap-1 mb-6 border border-gray-800">
+                        <button onclick="switchKeeperTab('keeper-lock')" id="btn-keeper-lock" class="flex-1 py-3 text-xs font-black tracking-widest uppercase text-gray-500 rounded-lg keeper-tab-btn active"><i class="fas fa-lock mr-1"></i> Lock</button>
+                        <button onclick="switchKeeperTab('keeper-with')" id="btn-keeper-with" class="flex-1 py-3 text-xs font-black tracking-widest uppercase text-gray-500 rounded-lg keeper-tab-btn"><i class="fas fa-unlock mr-1"></i> Extract</button>
                     </div>
-                </div>
-
-                <div class="w-full max-w-sm mt-6 theme-card p-5 rounded-2xl border border-gray-800 shadow-lg space-y-4">
-                    <div class="flex justify-between items-center border-b border-gray-800 pb-3">
-                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-wider">Email ID</span>
-                        <span class="font-bold text-xs text-contrast truncate max-w-[150px]" id="profile-lbl-email">...</span>
+                    
+                    <div id="keeper-lock" class="keeper-tab-content active font-medium">
+                        <form onsubmit="event.preventDefault(); initiateAction('keeper_lock')">
+                            <label class="nova-label">AMOUNT TO SECURE</label>
+                            <div class="relative mb-8">
+                                <span class="absolute left-5 top-4 text-red-500 font-black text-lg">₹</span>
+                                <input type="number" id="kl-amt" required class="w-full bg-[#0a0a0a] border border-[#2a2a2a] text-white rounded-xl pl-10 pr-4 py-4 text-lg focus:border-red-500 outline-none font-black shadow-inner tracking-wider">
+                            </div>
+                            <button type="submit" class="btn-animate w-full accent-bg text-white font-black py-4 rounded-xl shadow-[0_5px_20px_rgba(239,68,68,0.4)] tracking-widest uppercase">MOVE TO VAULT</button>
+                        </form>
                     </div>
-                    <div class="flex justify-between items-center border-b border-gray-800 pb-3">
-                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-wider">Telegram ID</span>
-                        <span class="font-bold text-xs text-blue-400" id="profile-lbl-tg">...</span>
-                    </div>
-                    <div class="flex justify-between items-center border-b border-gray-800 pb-3">
-                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-wider">Joined Date</span>
-                        <span class="font-bold text-xs text-contrast" id="profile-lbl-joined">Loading...</span>
-                    </div>
-                    <div class="flex justify-between items-center border-b border-gray-800 pb-3">
-                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-wider">Account Status</span>
-                        <span class="font-bold text-xs text-green-500">Active</span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-wider">Security PIN</span>
-                        <span id="profile-lbl-pin" class="font-black text-sm text-contrast font-mono tracking-widest">****</span>
+                    
+                    <div id="keeper-with" class="keeper-tab-content font-medium">
+                        <form onsubmit="event.preventDefault(); initiateAction('keeper_with')">
+                            <label class="nova-label">AMOUNT TO EXTRACT</label>
+                            <div class="relative mb-8">
+                                <span class="absolute left-5 top-4 text-gray-500 font-black text-lg">₹</span>
+                                <input type="number" id="kw-amt" required class="w-full bg-[#0a0a0a] border border-[#2a2a2a] text-white rounded-xl pl-10 pr-4 py-4 text-lg focus:border-gray-500 outline-none font-black shadow-inner tracking-wider">
+                            </div>
+                            <button type="submit" class="btn-animate w-full bg-white text-black font-black py-4 rounded-xl shadow-lg tracking-widest uppercase">PULL TO WALLET</button>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
+
+        <div id="view-txn" class="view-section min-h-screen relative overflow-hidden theme-card z-10">
+            <header class="flex items-center p-4 sticky top-0 z-30 border-b border-red-500/20 bg-black/80 backdrop-blur-md">
+                <button onclick="showView('home')" class="w-10 h-10 rounded-full flex items-center justify-center text-white bg-gray-900 border border-gray-800 transition-colors hover:bg-red-500"><i class="fas fa-arrow-left"></i></button>
+                <h1 class="ml-4 text-[16px] font-black tracking-widest text-white uppercase">TXN HISTORY</h1>
+            </header>
+            <div class="p-5 font-bold relative z-10 pb-32">
+                <form onsubmit="event.preventDefault(); searchTxn()" class="mb-6">
+                    <div class="relative flex gap-2">
+                        <input type="text" id="search-txn-id" placeholder="Search TXN ID..." class="flex-1 bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-sm focus:border-red-500 outline-none text-white font-mono uppercase shadow-inner">
+                        <button type="submit" class="bg-red-500 text-white px-5 rounded-xl font-black shadow-lg"><i class="fas fa-search"></i></button>
+                    </div>
+                </form>
+                <div id="full-txn-list" class="theme-card rounded-2xl shadow-xl border border-gray-800 overflow-hidden flex flex-col bg-[#121212]">
+                    </div>
+            </div>
+        </div>
+
     </main>
 
-    <nav class="fixed bottom-0 left-0 w-full theme-card shadow-[0_-10px_30px_rgba(0,0,0,0.05)] border-t border-gray-800 z-30 pb-safe transition-colors">
+    <nav class="fixed bottom-0 left-0 w-full theme-card shadow-[0_-15px_40px_rgba(0,0,0,0.4)] border-t border-red-500/20 z-[90] pb-safe bg-[#0a0a0a]">
         <div class="flex justify-between items-center px-6 py-2">
-            <a href="#" onclick="showView('send')" class="nav-item flex flex-col items-center gap-1 text-gray-400 hover:text-red-500 pt-2 pb-1 anim-send"><i class="fas fa-paper-plane text-xl btn-animate"></i></a>
-            <a href="#" onclick="showView('gift')" class="nav-item flex flex-col items-center gap-1 text-gray-400 hover:text-red-500 pt-2 pb-1 anim-gift"><i class="fas fa-gift text-xl btn-animate"></i></a>
-            <a href="#" onclick="showView('home')" class="relative -top-6 group anim-nav-home">
-                <div class="w-16 h-16 accent-bg text-white rounded-full flex items-center justify-center shadow-lg border-4 border-gray-900"><i class="fas fa-home text-2xl"></i></div>
+            <a href="#" onclick="showView('send')" class="nav-item flex flex-col items-center gap-1 text-gray-500 hover:text-red-500 pt-2 pb-1 transition-colors"><i class="fas fa-paper-plane text-xl btn-animate"></i><span class="text-[8px] font-black uppercase tracking-widest">Send</span></a>
+            <a href="#" onclick="showView('gift')" class="nav-item flex flex-col items-center gap-1 text-gray-500 hover:text-red-500 pt-2 pb-1 transition-colors"><i class="fas fa-gift text-xl btn-animate"></i><span class="text-[8px] font-black uppercase tracking-widest">Gift</span></a>
+            
+            <a href="#" onclick="openScanner()" class="relative -top-7 group">
+                <div class="w-16 h-16 bg-red-500 text-white rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(239,68,68,0.5)] border-4 border-[#0a0a0a] transition-transform group-hover:scale-110"><i class="fas fa-qrcode text-3xl"></i></div>
             </a>
-            <a href="#" onclick="showView('add')" class="nav-item flex flex-col items-center gap-1 text-gray-400 hover:text-red-500 pt-2 pb-1 anim-add"><i class="fas fa-plus-circle text-xl btn-animate"></i></a>
-            <a href="#" onclick="showView('myprofile')" class="nav-item flex flex-col items-center gap-1 text-gray-400 hover:text-red-500 pt-2 pb-1 anim-profile"><i class="fas fa-user text-xl btn-animate"></i></a>
+            
+            <a href="#" onclick="showView('add')" class="nav-item flex flex-col items-center gap-1 text-gray-500 hover:text-red-500 pt-2 pb-1 transition-colors"><i class="fas fa-plus-circle text-xl btn-animate"></i><span class="text-[8px] font-black uppercase tracking-widest">Add</span></a>
+            <a href="#" onclick="showView('txn')" class="nav-item flex flex-col items-center gap-1 text-gray-500 hover:text-red-500 pt-2 pb-1 transition-colors"><i class="fas fa-history text-xl btn-animate"></i><span class="text-[8px] font-black uppercase tracking-widest">Txns</span></a>
         </div>
     </nav>
 
-    <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-60 z-40 hidden transition-opacity backdrop-blur-sm" onclick="toggleSidebar()"></div>
-    <div id="sidebar" class="fixed top-0 left-0 w-64 h-full theme-card shadow-2xl z-50 transform -translate-x-full transition-transform flex flex-col border-r border-gray-800">
-        <div class="p-6 accent-bg text-white flex justify-between items-center shadow-md">
-            <h2 class="text-2xl font-black tracking-wider flex items-center gap-2"><i class="fas fa-wallet animate-pulse"></i> MENU</h2><button onclick="toggleSidebar()" class="hover:rotate-90 transition-transform"><i class="fas fa-times text-xl"></i></button>
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-80 z-[100] hidden transition-opacity backdrop-blur-sm" onclick="toggleSidebar()"></div>
+    <div id="sidebar" class="fixed top-0 left-0 w-[280px] h-full bg-[#121212] shadow-[10px_0_30px_rgba(0,0,0,0.8)] z-[110] transform -translate-x-full transition-transform duration-300 flex flex-col border-r border-red-500/20">
+        
+        <div class="p-6 bg-gradient-to-br from-red-600 to-red-800 text-white flex justify-between items-center shadow-lg relative overflow-hidden">
+            <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div>
+            <h2 class="text-xl font-black tracking-widest flex items-center gap-2 relative z-10"><i class="fas fa-wallet"></i> MENU</h2>
+            <button onclick="toggleSidebar()" class="hover:rotate-90 transition-transform relative z-10"><i class="fas fa-times text-2xl"></i></button>
         </div>
-        <div class="p-6 text-center border-b border-gray-800 flex flex-col items-center relative sidebar-profile-bg theme-card">
-            <h3 class="font-black text-lg" id="sidebar-name">User Name</h3>
-            <p class="text-xs accent-text font-bold tracking-widest font-mono" id="sidebar-phone">Phone</p>
+        
+        <div class="p-6 text-center border-b border-gray-800 flex flex-col items-center bg-[#0a0a0a] relative">
+            <div class="w-20 h-20 rounded-full border-2 border-red-500 mb-3 overflow-hidden shadow-[0_0_15px_rgba(239,68,68,0.4)] flex items-center justify-center bg-gray-900">
+                <img id="sidebar-dp" src="" class="w-full h-full object-cover hidden">
+                <span id="sidebar-initial" class="text-3xl font-black text-red-500">U</span>
+            </div>
+            <h3 class="font-black text-lg text-white tracking-wide" id="sidebar-name">User Name</h3>
+            
+            <div class="mt-4 p-2 bg-white rounded-xl shadow-lg border-2 border-red-500" style="width: 130px; height: 130px; margin-left: auto; margin-right: auto;">
+                <div id="sidebar-qr-code" class="w-full h-full flex items-center justify-center"></div>
+            </div>
+            <p class="text-[9px] text-gray-500 uppercase tracking-widest mt-2 font-black">Scan to Pay Me</p>
         </div>
-        <div class="flex-1 overflow-y-auto py-4 theme-card">
+        
+        <div class="flex-1 overflow-y-auto py-2 bg-[#121212] custom-scrollbar">
             <ul class="space-y-1">
-                <li><a href="#" onclick="showView('myprofile'); toggleSidebar()" class="block px-6 py-3 hover:bg-gray-800 transition-colors font-semibold"><i class="fas fa-user-circle w-6"></i> My Profile</a></li>
-                <li><a href="#" onclick="showView('api'); toggleSidebar()" class="block px-6 py-3 hover:bg-gray-800 transition-colors font-semibold"><i class="fas fa-code w-6"></i> API System</a></li>
-                <li><a href="#" onclick="showAuthView('reset-pin'); document.getElementById('auth-wrapper').classList.remove('hidden'); toggleSidebar()" class="block px-6 py-3 hover:bg-gray-800 transition-colors font-semibold"><i class="fas fa-key w-6"></i> Change Security PIN</a></li>
-                <li><a href="#" onclick="showView('botalert'); toggleSidebar()" class="block px-6 py-3 hover:bg-gray-800 transition-colors font-semibold"><i class="fas fa-robot w-6"></i> Bot Alert Settings</a></li>
-                <li><a href="#" onclick="window.open('https://t.me/ownerxnovapay', '_blank'); toggleSidebar()" class="block px-6 py-3 hover:bg-gray-800 transition-colors font-semibold"><i class="fas fa-headset w-6"></i> Support Section</a></li>
-                
-                <li><div class="h-px bg-gray-800 my-2 mx-4 font-bold"></div></li>
-                <li><a href="#" onclick="logoutUser()" class="block px-6 py-3 text-red-500 hover:bg-red-900/20 transition-colors font-semibold"><i class="fas fa-sign-out-alt w-6"></i> Logout</a></li>
+                <li><a href="#" onclick="showView('api'); toggleSidebar()" class="block px-6 py-4 hover:bg-red-500/10 text-gray-300 hover:text-white transition-colors font-black text-xs tracking-widest uppercase"><i class="fas fa-code w-6 text-red-500"></i> API Integrations</a></li>
+                <li><a href="#" onclick="showAuthView('reset-pin'); document.getElementById('auth-wrapper').classList.remove('hidden'); toggleSidebar()" class="block px-6 py-4 hover:bg-red-500/10 text-gray-300 hover:text-white transition-colors font-black text-xs tracking-widest uppercase"><i class="fas fa-key w-6 text-red-500"></i> Modify Security PIN</a></li>
+                <li><a href="#" onclick="showView('botalert'); toggleSidebar()" class="block px-6 py-4 hover:bg-red-500/10 text-gray-300 hover:text-white transition-colors font-black text-xs tracking-widest uppercase"><i class="fas fa-robot w-6 text-red-500"></i> Bot Alerts</a></li>
+                <li><a href="#" onclick="window.open('https://t.me/ownerxnovapay', '_blank'); toggleSidebar()" class="block px-6 py-4 hover:bg-red-500/10 text-gray-300 hover:text-white transition-colors font-black text-xs tracking-widest uppercase"><i class="fas fa-headset w-6 text-red-500"></i> Get Support</a></li>
+                <li><div class="h-px bg-gray-800 my-2 mx-6"></div></li>
+                <li><a href="#" onclick="logoutUser()" class="block px-6 py-4 text-red-500 hover:bg-red-900/30 transition-colors font-black text-xs tracking-widest uppercase"><i class="fas fa-power-off w-6"></i> Terminate Session</a></li>
             </ul>
         </div>
     </div>
