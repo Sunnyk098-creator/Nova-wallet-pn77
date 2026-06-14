@@ -52,15 +52,11 @@ async function apiCall(action, data = {}) {
         let res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, data }) });
         const responseText = await res.text();
         let result;
-        try { result = JSON.parse(responseText); } catch (e) { throw new Error("API Not Found (404)."); }
+        try { result = JSON.parse(responseText); } catch (e) { throw new Error("API Error"); }
         if(!res.ok || result.error) throw new Error(result.error || "Server error");
         return result.data;
     } catch(err) { 
-        if (err.message === "invalid fetch balance profit transaction error") {
-            console.error("Database Sync Errored");
-        } else {
-            if(err.message !== "invalid") showToast(err.message); 
-        }
+        if(err.message !== "invalid") showToast(err.message); 
         throw err; 
     }
 }
@@ -101,22 +97,57 @@ async function regenerateApiKey() {
 }
 
 function showAuthView(view) { ['login', 'signup', 'otp', 'reset-pin'].forEach(v => document.getElementById('auth-' + v).classList.add('hidden')); document.getElementById('auth-' + view).classList.remove('hidden'); }
-function logoutUser() { localStorage.removeItem('novaSession'); currentUser = null; location.reload(); }
 
+// --- FIXED: IP LOGOUT IMPLEMENTATION ---
+async function logoutUser() { 
+    if (currentUser && currentUser.phone) {
+        try { await apiCall('LOGOUT', { phone: currentUser.phone }); } catch(e) {}
+    }
+    localStorage.removeItem('novaSession'); 
+    currentUser = null; 
+    location.reload(); 
+}
+
+// --- FIXED: IP AUTO LOGIN & STRICT SESSION ---
 async function checkAuth() {
+    try {
+        // Step 1: Check IP Auto Login
+        let userFromIp = await apiCall('CHECK_IP', {});
+        if (userFromIp && !userFromIp.isBanned) {
+            currentUser = userFromIp;
+            localStorage.setItem('novaSession', currentUser.phone);
+            if (!currentUser.apiKey) { currentUser.apiKey = generateApiKey(); await apiCall('GENERATE_API', { phone: currentUser.phone, newKey: currentUser.apiKey }); }
+            document.getElementById('auth-wrapper').classList.add('hidden');
+            initApp();
+            return;
+        }
+    } catch(e) { console.log("IP Check skipped."); }
+
+    // Step 2: Fallback to LocalStorage
     let sessionPhone = localStorage.getItem('novaSession');
     if (sessionPhone) {
         try {
             let user = await apiCall('CHECK_USER', { phone: sessionPhone });
             if (user) {
                 currentUser = user; 
-                currentUser.phone = sessionPhone; // FIX: Strict injection
+                currentUser.phone = sessionPhone; 
                 if(currentUser.isBanned) { document.getElementById('banned-wrapper').classList.remove('hidden'); document.getElementById('banned-wrapper').style.display = 'flex'; return; }
                 if (!currentUser.apiKey) { currentUser.apiKey = generateApiKey(); await apiCall('GENERATE_API', { phone: currentUser.phone, newKey: currentUser.apiKey }); }
-                document.getElementById('auth-wrapper').classList.add('hidden'); initApp();
-            } else { logoutUser(); }
-        } catch(e) { logoutUser(); }
-    } else { document.getElementById('auth-wrapper').classList.remove('hidden'); showAuthView('login'); }
+                document.getElementById('auth-wrapper').classList.add('hidden'); 
+                initApp();
+            } else { 
+                // Explicitly deleted user
+                localStorage.removeItem('novaSession');
+                document.getElementById('auth-wrapper').classList.remove('hidden'); showAuthView('login');
+            }
+        } catch(e) { 
+            // FIXED: Do NOT logout if DB errors out or internet goes off
+            console.warn("Auth Check Network Error. Continuing session blindly.");
+            setTimeout(checkAuth, 3000); 
+        }
+    } else { 
+        document.getElementById('auth-wrapper').classList.remove('hidden'); showAuthView('login'); 
+    }
 }
 
 async function processLogin() {
@@ -187,15 +218,15 @@ async function syncLoop() {
     setTimeout(syncLoop, 3000); 
 }
 
+// --- FIXED: RELIABLE DB SYNC ---
 async function syncData() {
     if(!currentUser) return;
     try {
         let data = await apiCall('SYNC', { phone: currentUser.phone });
         if(data.user) {
-            if(data.user.isBanned) return location.reload();
+            if(data.user.isBanned) { document.getElementById('banned-wrapper').classList.remove('hidden'); document.getElementById('banned-wrapper').style.display = 'flex'; return; }
             
             let prevBalance = currentBalance;
-            // FIX: Secure merge to prevent auto logout bugs
             let savedPhone = currentUser.phone;
             currentUser = { ...currentUser, ...data.user };
             currentUser.phone = savedPhone; 
@@ -222,7 +253,10 @@ async function syncData() {
         }
         updateUI();
         updateStatsDashboard();
-    } catch(e) {}
+    } catch(e) {
+        // Suppress errors, NO AUTO LOGOUT
+        console.warn("DB Sync Background Error Ignored.");
+    }
 }
 
 function toggleBalanceVisibility() {
@@ -277,7 +311,6 @@ if(sNumEl) {
 function initiateAction(type) {
     if(!checkCooldown()) return;
     
-    // Pre-Validation before showing PIN modal
     if(type === 'send') {
         if (!sendResolvedPhone) return showToast("Invalid Receiver!");
         let amt = parseFloat(document.getElementById('send-amt').value);
@@ -334,32 +367,23 @@ function pinKeyBackspace() {
 function updatePinDashes() {
     for(let i=1; i<=4; i++) {
         let dash = document.getElementById('pin-dot-' + i);
-        if(i <= currentPinInput.length) {
-            dash.innerText = "•"; 
-            dash.classList.add('filled');
-        } else {
-            dash.innerText = "_";
-            dash.classList.remove('filled');
-        }
+        if(i <= currentPinInput.length) { dash.innerText = "•"; dash.classList.add('filled'); } 
+        else { dash.innerText = "_"; dash.classList.remove('filled'); }
     }
 }
 
 function closePinModal() {
     document.getElementById('custom-pin-modal').classList.add('opacity-0');
     setTimeout(() => document.getElementById('custom-pin-modal').classList.add('hidden'), 300);
-    pendingAction = null;
-    currentPinInput = "";
+    pendingAction = null; currentPinInput = "";
 }
 
 function submitPinModal() {
     if(currentPinInput.length !== 4) return showToast("Enter 4-digit PIN");
     if(currentPinInput === currentUser?.pin) {
-        closePinModal();
-        executePendingAction();
+        closePinModal(); executePendingAction();
     } else {
-        showToast("Incorrect Security PIN!");
-        currentPinInput = "";
-        updatePinDashes();
+        showToast("Incorrect Security PIN!"); currentPinInput = ""; updatePinDashes();
     }
 }
 
@@ -374,7 +398,7 @@ async function executePendingAction() {
 }
 
 // ----------------------------------------------------
-// CORE ACTIONS (Executes AFTER PIN verification)
+// CORE ACTIONS
 // ----------------------------------------------------
 
 async function processSend() {
@@ -488,15 +512,11 @@ async function openScanner() {
         isQRTorchOn = false;
         document.getElementById('btn-qr-zoom').innerText = "1X";
         document.getElementById('btn-qr-torch').classList.remove('active-torch');
-    } catch(e) {
-        showToast("Camera access denied or failed.");
-    }
+    } catch(e) { showToast("Camera access denied or failed."); }
 }
 
 function closeScanner() {
-    if (html5QrCode && html5QrCode.isScanning) {
-        html5QrCode.stop().catch(err => console.log(err));
-    }
+    if (html5QrCode && html5QrCode.isScanning) { html5QrCode.stop().catch(err => console.log(err)); }
     document.getElementById('view-scan').classList.add('hidden');
     showView('home');
 }
@@ -506,8 +526,7 @@ function toggleQRTorch() {
     isQRTorchOn = !isQRTorchOn;
     html5QrCode.applyVideoConstraints({ advanced: [{ torch: isQRTorchOn }] }).then(() => {
         let btn = document.getElementById('btn-qr-torch');
-        if(isQRTorchOn) btn.classList.add('active-torch');
-        else btn.classList.remove('active-torch');
+        if(isQRTorchOn) btn.classList.add('active-torch'); else btn.classList.remove('active-torch');
     }).catch(() => showToast("Torch not supported on this device"));
 }
 
@@ -516,91 +535,51 @@ function toggleQRZoom() {
     currentQRZoom++;
     if(currentQRZoom > 5) currentQRZoom = 1;
     document.getElementById('btn-qr-zoom').innerText = currentQRZoom + "X";
-
-    html5QrCode.applyVideoConstraints({ advanced: [{ zoom: currentQRZoom }] })
-        .catch(() => showToast("Zooming not supported"));
+    html5QrCode.applyVideoConstraints({ advanced: [{ zoom: currentQRZoom }] }).catch(() => showToast("Zooming not supported"));
 }
 
 function handleQRImage(event) {
     const file = event.target.files[0];
     if(!file) return;
     if(!html5QrCode) html5QrCode = new Html5Qrcode("reader");
-    html5QrCode.scanFile(file, true).then(decodedText => {
-        closeScanner();
-        handleScanResult(decodedText);
-    }).catch(err => {
-        showToast("No QR code found in image.");
-    });
+    html5QrCode.scanFile(file, true).then(decodedText => { closeScanner(); handleScanResult(decodedText); }).catch(err => { showToast("No QR code found in image."); });
 }
 
 function handleScanResult(text) {
     playSound('success');
     showView('send');
     let numInput = document.getElementById('send-num');
-    if(numInput) {
-        numInput.value = text;
-        numInput.dispatchEvent(new Event('input')); 
-    }
+    if(numInput) { numInput.value = text; numInput.dispatchEvent(new Event('input')); }
 }
 
 // ----------------------------------------------------
-// SIDEBAR QR GENERATOR
+// FIXED: SIDEBAR QR GENERATOR
 // ----------------------------------------------------
 function generateSidebarQR() {
     if (!currentUser) return;
     const qrContainer = document.getElementById("sidebar-qr-code");
     if (!qrContainer) return;
-    qrContainer.innerHTML = ""; // Clear existing
+    qrContainer.innerHTML = ""; 
     let qrValue = currentUser.customId || currentUser.phone;
-    new QRCode(qrContainer, {
-        text: qrValue,
-        width: 130,
-        height: 130,
-        colorDark : "#ef4444", // Red matching theme
-        colorLight : "#ffffff",
-        correctLevel : QRCode.CorrectLevel.H
-    });
+    
+    // Delayed to ensure DOM is ready to take dimensions
+    setTimeout(() => {
+        try {
+            new QRCode(qrContainer, {
+                text: qrValue,
+                width: 130,
+                height: 130,
+                colorDark : "#ef4444", 
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+        } catch(err) { console.log("QR Generate Wait..."); }
+    }, 200);
 }
 
 // ----------------------------------------------------
 // UI PROFILE & STATS
 // ----------------------------------------------------
-async function editProfileName() {
-    let newName = prompt("Enter new Name:", currentUser.name);
-    if (newName && newName.trim() !== "" && newName !== currentUser.name) {
-        try {
-            await apiCall('UPDATE_PROFILE', { phone: currentUser.phone, name: newName.trim() });
-            currentUser.name = newName.trim();
-            updateProfileDashboardUI();
-            updateUI();
-            showToast("Name Updated Successfully!");
-        } catch(e) { showToast("Failed to update name."); }
-    }
-}
-
-async function updateProfileEmail() {
-    let newEmail = document.getElementById('profile-edit-email').value.trim();
-    if(!newEmail || !newEmail.includes('@')) return showToast("Please enter a valid email ID");
-    try {
-        await apiCall('UPDATE_PROFILE', { phone: currentUser.phone, email: newEmail });
-        currentUser.email = newEmail;
-        updateProfileDashboardUI();
-        document.getElementById('profile-edit-email').value = '';
-        showToast("Email ID updated successfully!");
-    } catch(e) { showToast("Failed to update email."); }
-}
-
-async function saveBotAlertSettingsFS() {
-    let isEnabled = document.getElementById('toggle-bot-alert-check-fs').checked;
-    let newTgId = document.getElementById('bot-alert-tg-id-fs').value.trim();
-    if (newTgId && !/^\d+$/.test(newTgId)) { return showToast("Telegram User ID must be NUMERIC only."); }
-    try {
-        await apiCall('UPDATE_PROFILE', { phone: currentUser.phone, botAlerts: isEnabled, tgUserId: newTgId });
-        currentUser.botAlerts = isEnabled; currentUser.tgUserId = newTgId;
-        updateProfileDashboardUI(); showToast("Bot Alert Settings Saved!"); showView('home');
-    } catch(e) { showToast("Failed to save settings."); }
-}
-
 function updateProfileDashboardUI() {
     if(!currentUser) return;
     const pName = document.getElementById('profile-display-name');
@@ -640,7 +619,6 @@ async function processLocalDpUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) return showToast("Image size must be less than 2MB");
-
     showToast("Uploading Image...");
     const reader = new FileReader();
     reader.onload = function (event) {
@@ -650,10 +628,8 @@ async function processLocalDpUpload(event) {
             const maxDim = 250; let width = img.width; let height = img.height;
             if (width > height) { if (width > maxDim) { height *= maxDim / width; width = maxDim; } } 
             else { if (height > maxDim) { width *= maxDim / height; height = maxDim; } }
-            
             canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height);
             const base64Data = canvas.toDataURL('image/jpeg', 0.7);
-            
             apiCall('UPDATE_DP', { phone: currentUser?.phone, dp: base64Data }).then(() => {
                 if(currentUser) currentUser.dp = base64Data;
                 updateUI(); updateProfileDashboardUI(); showToast("Profile picture updated successfully!");
@@ -664,45 +640,9 @@ async function processLocalDpUpload(event) {
     reader.readAsDataURL(file);
 }
 
-function handleScreenshotUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    if (file.size > 2 * 1024 * 1024) return showToast("Image size must be less than 2MB");
-
-    showToast("Processing screenshot...");
-    const reader = new FileReader();
-    reader.onload = function (e) {
-        const img = new Image();
-        img.onload = function () {
-            const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
-            const maxDim = 320; let width = img.width; let height = img.height;
-            if (width > height) { if (width > maxDim) { height *= maxDim / width; width = maxDim; } } 
-            else { if (height > maxDim) { width *= maxDim / height; height = maxDim; } }
-            canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height);
-            uploadedScreenshotBase64 = canvas.toDataURL('image/jpeg', 0.6);
-            
-            const btn = document.getElementById('btn-upload-screenshot');
-            if (btn) {
-                btn.innerHTML = `<i class="fas fa-check-circle text-lg"></i> Screenshot Attached`;
-                btn.className = "w-full mb-6 py-4 px-4 rounded-xl text-xs font-black tracking-widest uppercase border-2 border-dashed border-green-500/50 text-green-400 bg-green-500/5 transition-colors flex items-center justify-center gap-2";
-            }
-            const previewContainer = document.getElementById('screenshot-preview-container');
-            const previewImg = document.getElementById('screenshot-preview-img');
-            if (previewContainer && previewImg) {
-                previewImg.src = uploadedScreenshotBase64;
-                previewContainer.classList.remove('hidden');
-            }
-            showToast("Screenshot successfully uploaded!");
-        };
-        img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-}
-
 function initApp() {
     if(currentUser) {
         document.getElementById('sidebar-name').innerText = currentUser.name; 
-        document.getElementById('sidebar-phone').innerText = currentUser.customId || currentUser.phone;
         
         let sidebarDp = document.getElementById('sidebar-dp');
         let sidebarInitial = document.getElementById('sidebar-initial');
@@ -712,7 +652,6 @@ function initApp() {
             sidebarInitial.innerText = currentUser.name.charAt(0).toUpperCase();
         }
         
-        // Generate the QR code for sidebar
         generateSidebarQR();
     }
     updateApiKeyUI();
@@ -729,7 +668,7 @@ function initApp() {
     }
 }
 
-// ... Additional Lifafa & Gift & Keeper Process functions
+// ... Lifafa & Gift & Keeper Process functions
 async function processLifafaCreate() {
     let type = document.getElementById('lif-type').value;
     let users = parseInt(document.getElementById('lif-users').value); 
@@ -751,7 +690,6 @@ async function processLifafaCreate() {
     try {
         let lifafaId = await apiCall('CREATE_LIFAFA', { phone: currentUser?.phone, type: type, amountPerUser: amountPerUser, minAmount: minAmount, maxAmount: maxAmount, totalUsers: users, password: password, channels: channels, referActive: referActive, referAmount: referAmount, totalDeduction: totalDeduction, txn });
         playSound('debit'); currentBalance -= totalDeduction; updateUI(); 
-        
         document.getElementById('lifafa-create-form-wrapper').classList.add('hidden');
         document.getElementById('lifafa-result-link').value = `https://${window.location.host}/?lifafa=${lifafaId}`;
         document.getElementById('lifafa-success-box').classList.remove('hidden');
@@ -764,7 +702,6 @@ async function processGiftCreate() {
     let total = amt * users;
     let code = Math.random().toString(36).substring(2, 7).toUpperCase();
     let txn = createTxnObj('out', `Gift Code Created`, total, `Code: ${code}`, 'fa-gift', 'pink', 'Gift System', 'N/A');
-
     try {
         await apiCall('CREATE_GIFT', { phone: currentUser?.phone, code, amount: amt, users, txn });
         playSound('debit'); sendTelegramMsg(currentUser?.tgUserId, formatTgMsg('out', 'Gift Code Generated', total, `Code: <b>${code}</b>`)); 
@@ -843,6 +780,7 @@ function updateStatsDashboard() {
     let hRate = document.getElementById('home-stats-rate'); if(hRate) hRate.innerText = successRate;
 }
 
+// --- FIXED: TRANSACTIONS LIST RENDERING ---
 function updateUI() {
     if (currentBalance !== lastRenderedBalance) {
         document.querySelectorAll('.global-balance').forEach(el => el.innerText = currentBalance.toFixed(2));
@@ -867,11 +805,10 @@ function updateUI() {
         const homeListEl = document.getElementById('home-txn-list'); 
         const fullListEl = document.getElementById('full-txn-list');
 
-        let htmlString = '';
-        if(visibleTxns.length === 0) {
-            htmlString = '<p class="text-center text-gray-500 p-6 text-xs font-bold font-black">No transactions found</p>';
-        } else {
-            visibleTxns.forEach(txn => {
+        let generateTxnHtml = (txnList) => {
+            if(txnList.length === 0) return '<p class="text-center text-gray-500 p-6 text-xs font-bold font-black uppercase tracking-widest">No Records Found</p>';
+            let html = '';
+            txnList.forEach(txn => {
                 let amountClass = ''; let titleClass = 'text-gray-200'; let sign = ''; let statusColor = 'text-gray-400';
                 if (txn.status === 'Pending') { statusColor = 'text-yellow-500'; amountClass = 'text-yellow-500'; titleClass = 'text-yellow-500'; sign = ''; } 
                 else if (txn.status === 'Rejected') { statusColor = 'text-red-500'; amountClass = 'text-red-500'; titleClass = 'text-red-500'; sign = ''; } 
@@ -879,31 +816,13 @@ function updateUI() {
                     if (txn.type === 'in') { statusColor = 'text-green-500'; amountClass = 'text-green-500'; titleClass = 'text-green-500'; sign = '+'; } 
                     else { statusColor = 'text-green-500'; amountClass = 'text-red-500'; sign = '-'; }
                 }
-                
-                htmlString += `<div onclick="openTxnModal('${txn.id}')" class="flex justify-between items-center p-4 border-b border-gray-800 hover:bg-gray-900 theme-card cursor-pointer transition-colors"><div class="flex items-center gap-3"><div class="w-11 h-11 rounded-2xl bg-[#0a0a0a] text-white flex items-center justify-center text-lg border border-gray-800 shadow-inner"><i class="fas ${txn.icon}"></i></div><div><p class="text-sm font-bold ${titleClass}">${txn.title}</p><p class="text-[10px] ${statusColor} font-bold mt-0.5 tracking-wider uppercase">${txn.status} • ${txn.date}</p></div></div><p class="font-black ${amountClass} tracking-wide">${sign}₹${parseFloat(txn.amount).toFixed(2)}</p></div>`;
+                html += `<div onclick="openTxnModal('${txn.id}')" class="flex justify-between items-center p-4 border-b border-gray-800 hover:bg-gray-900 theme-card cursor-pointer transition-colors"><div class="flex items-center gap-3"><div class="w-11 h-11 rounded-2xl bg-[#0a0a0a] text-white flex items-center justify-center text-lg border border-gray-800 shadow-inner"><i class="fas ${txn.icon}"></i></div><div><p class="text-sm font-bold ${titleClass}">${txn.title}</p><p class="text-[10px] ${statusColor} font-bold mt-0.5 tracking-wider uppercase">${txn.status} • ${txn.date}</p></div></div><p class="font-black ${amountClass} tracking-wide">${sign}₹${parseFloat(txn.amount).toFixed(2)}</p></div>`;
             });
-        }
-        
-        if (fullListEl) fullListEl.innerHTML = htmlString;
-        
-        if (homeListEl) {
-            if(visibleTxns.length === 0) {
-                homeListEl.innerHTML = htmlString;
-            } else {
-                let homeHtml = '';
-                visibleTxns.slice(0, 10).forEach(txn => {
-                    let amountClass = ''; let titleClass = 'text-gray-200'; let sign = ''; let statusColor = 'text-gray-400';
-                    if (txn.status === 'Pending') { statusColor = 'text-yellow-500'; amountClass = 'text-yellow-500'; titleClass = 'text-yellow-500'; sign = ''; } 
-                    else if (txn.status === 'Rejected') { statusColor = 'text-red-500'; amountClass = 'text-red-500'; titleClass = 'text-red-500'; sign = ''; } 
-                    else {
-                        if (txn.type === 'in') { statusColor = 'text-green-500'; amountClass = 'text-green-500'; titleClass = 'text-green-500'; sign = '+'; } 
-                        else { statusColor = 'text-green-500'; amountClass = 'text-red-500'; sign = '-'; }
-                    }
-                    homeHtml += `<div onclick="openTxnModal('${txn.id}')" class="flex justify-between items-center p-4 border-b border-gray-800 hover:bg-gray-900 theme-card cursor-pointer transition-colors"><div class="flex items-center gap-3"><div class="w-11 h-11 rounded-2xl bg-[#0a0a0a] text-white flex items-center justify-center text-lg border border-gray-800 shadow-inner"><i class="fas ${txn.icon}"></i></div><div><p class="text-sm font-bold ${titleClass}">${txn.title}</p><p class="text-[10px] ${statusColor} font-bold mt-0.5 tracking-wider uppercase">${txn.status} • ${txn.date}</p></div></div><p class="font-black ${amountClass} tracking-wide">${sign}₹${parseFloat(txn.amount).toFixed(2)}</p></div>`;
-                });
-                homeListEl.innerHTML = homeHtml;
-            }
-        }
+            return html;
+        };
+
+        if (homeListEl) homeListEl.innerHTML = generateTxnHtml(visibleTxns.slice(0, 10));
+        if (fullListEl) fullListEl.innerHTML = generateTxnHtml(visibleTxns);
     }
 }
 
@@ -931,7 +850,7 @@ function openTxnModal(txnId) {
         statusEl.innerText = txn.status;
         statusEl.className = "text-xs font-black uppercase tracking-wider mt-2 rounded-full px-3 py-1 inline-block border";
         if (txn.status === 'Success') { statusEl.style.backgroundColor = 'rgba(34, 197, 94, 0.15)'; statusEl.style.color = '#4ade80'; statusEl.style.borderColor = 'rgba(34, 197, 94, 0.3)'; } 
-        else if (txn.status === 'Pending') { statusEl.style.backgroundColor = 'rgba(234, 179, 8, 0.15)'; statusEl.style.color = '#facc15'; statusEl.style.borderColor = 'rgba(234, 179, 8, 0.3)'; } 
+        else if (txn.status === 'Pending') { statusColor = 'text-yellow-500'; statusEl.style.backgroundColor = 'rgba(234, 179, 8, 0.15)'; statusEl.style.color = '#facc15'; statusEl.style.borderColor = 'rgba(234, 179, 8, 0.3)'; } 
         else if (txn.status === 'Rejected' || txn.status === 'Fail') { statusEl.style.backgroundColor = 'rgba(239, 68, 68, 0.15)'; statusEl.style.color = '#f87171'; statusEl.style.borderColor = 'rgba(239, 68, 68, 0.3)'; }
     }
 
@@ -980,7 +899,20 @@ async function showView(viewId) {
     window.scrollTo({top:0, behavior:'smooth'}); 
 }
 
-function toggleSidebar() { const sidebar = document.getElementById('sidebar'); const overlay = document.getElementById('sidebarOverlay'); if(sidebar.classList.contains('-translate-x-full')) { sidebar.classList.remove('-translate-x-full'); overlay.classList.remove('hidden'); setTimeout(()=>overlay.classList.add('opacity-100'),10); } else { sidebar.classList.add('-translate-x-full'); overlay.classList.remove('opacity-100'); setTimeout(()=>overlay.classList.add('hidden'),300); } }
+function toggleSidebar() { 
+    const sidebar = document.getElementById('sidebar'); 
+    const overlay = document.getElementById('sidebarOverlay'); 
+    if(sidebar.classList.contains('-translate-x-full')) { 
+        sidebar.classList.remove('-translate-x-full'); 
+        overlay.classList.remove('hidden'); 
+        setTimeout(()=>overlay.classList.add('opacity-100'),10); 
+        generateSidebarQR(); // Ensure QR renders on opening
+    } else { 
+        sidebar.classList.add('-translate-x-full'); 
+        overlay.classList.remove('opacity-100'); 
+        setTimeout(()=>overlay.classList.add('hidden'),300); 
+    } 
+}
 function switchTab(tabId) { document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active', 'accent-bg', 'text-white')); document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.add('text-gray-500')); document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); let activeBtn = document.getElementById('tab-'+tabId); activeBtn.classList.remove('text-gray-500'); activeBtn.classList.add('active', 'accent-bg', 'text-white'); document.getElementById(tabId).classList.add('active'); }
 function switchLifafaTab(tabId) { 
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active', 'accent-bg', 'text-white')); 
@@ -995,11 +927,12 @@ function switchLifafaTab(tabId) {
 function switchKeeperTab(tabId) { document.querySelectorAll('.keeper-tab-btn').forEach(btn => btn.classList.remove('active')); document.querySelectorAll('.keeper-tab-content').forEach(c => c.classList.remove('active')); document.getElementById('btn-'+tabId).classList.add('active'); document.getElementById(tabId).classList.add('active'); }
 
 function searchTxn() {
-    let tid = document.getElementById('search-txn-id').value.trim().toUpperCase();
+    let tid = document.getElementById('search-txn-id') ? document.getElementById('search-txn-id').value.trim().toUpperCase() : '';
     const listEl = document.getElementById('full-txn-list');
     
     if(!tid) {
-        updateUI(); // re-render all
+        lastTxnSignature = ""; // force re-render
+        updateUI(); 
         return;
     }
     
@@ -1015,7 +948,7 @@ function searchTxn() {
         
         listEl.innerHTML = `<div onclick="openTxnModal('${txn.id}')" class="flex justify-between items-center p-4 border-b border-gray-800 hover:bg-gray-900 theme-card cursor-pointer transition-colors"><div class="flex items-center gap-3"><div class="w-11 h-11 rounded-2xl bg-[#0a0a0a] text-white flex items-center justify-center text-lg border border-gray-800 shadow-inner"><i class="fas ${txn.icon}"></i></div><div><p class="text-sm font-bold ${titleClass}">${txn.title}</p><p class="text-[10px] ${statusColor} font-bold mt-0.5 tracking-wider uppercase">${txn.status} • ${txn.date}</p></div></div><p class="font-black ${amountClass} tracking-wide">${sign}₹${parseFloat(txn.amount).toFixed(2)}</p></div>`;
     } else {
-        listEl.innerHTML = '<p class="text-center text-gray-500 p-6 text-xs font-bold font-black">Transaction not found</p>';
+        listEl.innerHTML = '<p class="text-center text-gray-500 p-6 text-xs font-bold font-black uppercase tracking-widest">Transaction not found</p>';
     }
 }
 
