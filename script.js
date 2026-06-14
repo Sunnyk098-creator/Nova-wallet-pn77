@@ -134,7 +134,7 @@ async function processSignupStep1() {
         
         pendingSignupUser = { 
             name, email, password: pass, pin, tgUserId: telegram, isBanned: false, balance: 0, keeperBalance: 0, 
-            apiKey: generateApiKey(), botAlerts: true
+            apiKey: generateApiKey(), botAlerts: true, timestamp: Date.now()
         }; 
         pendingSignupUser.phone = phone; 
         pendingOTP = Math.floor(100000 + Math.random() * 900000).toString(); 
@@ -284,6 +284,20 @@ async function editProfileName() {
     }
 }
 
+async function updateProfileEmail() {
+    let newEmail = document.getElementById('profile-edit-email').value.trim();
+    if(!newEmail || !newEmail.includes('@')) return showToast("Please enter a valid email ID");
+    try {
+        await apiCall('UPDATE_PROFILE', { phone: currentUser.phone, email: newEmail });
+        currentUser.email = newEmail;
+        updateProfileDashboardUI();
+        document.getElementById('profile-edit-email').value = '';
+        showToast("Email ID updated successfully!");
+    } catch(e) {
+        showToast("Failed to update email.");
+    }
+}
+
 async function saveBotAlertSettingsFS() {
     let isEnabled = document.getElementById('toggle-bot-alert-check-fs').checked;
     let newTgId = document.getElementById('bot-alert-tg-id-fs').value.trim();
@@ -307,18 +321,27 @@ function updateProfileDashboardUI() {
     
     const pName = document.getElementById('profile-display-name');
     const pLblPhone = document.getElementById('profile-lbl-phone');
+    const pLblPhonePill = document.getElementById('profile-lbl-phone-pill'); // New Pill
     const pLblEmail = document.getElementById('profile-lbl-email');
     const pLblCustom = document.getElementById('profile-lbl-custom');
     const pLblTg = document.getElementById('profile-lbl-tg');
     const pLblPin = document.getElementById('profile-lbl-pin');
+    const pJoined = document.getElementById('profile-lbl-joined'); // New Joined Date
     const pImg = document.getElementById('profile-dashboard-dp');
     const pInitial = document.getElementById('profile-dashboard-initial');
 
     if (pName) pName.innerHTML = currentUser.name;
     if (pLblPhone) pLblPhone.innerText = currentUser.phone;
+    if (pLblPhonePill) pLblPhonePill.innerText = currentUser.phone;
+    
     if (pLblEmail) pLblEmail.innerText = currentUser.email || 'Not Provided';
     if (pLblPin) pLblPin.innerText = currentUser.pin || "****";
     
+    if (pJoined) {
+        let joinedText = currentUser.timestamp ? new Date(currentUser.timestamp).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }) : 'Verified Member';
+        pJoined.innerText = joinedText;
+    }
+
     if (pLblCustom) {
         if (currentUser.customId) {
             pLblCustom.innerText = currentUser.customId;
@@ -1205,10 +1228,8 @@ function updateStatsDashboard() {
     let pNum = document.getElementById('prof-stats-no-of-txns'); if(pNum) pNum.innerText = totalTxns;
     let pRate = document.getElementById('prof-stats-success-rate'); if(pRate) pRate.innerText = successRate;
 
-    // Home Page Stats (Square Cards)
+    // Home Page Stats (Rectangular Cards)
     let hCred = document.getElementById('home-stats-credit'); if(hCred) hCred.innerText = '₹' + totalCredit.toFixed(2);
-    let hSucc = document.getElementById('home-stats-count'); if(hSucc) hSucc.innerText = successCount;
-    let hTotal = document.getElementById('home-stats-count-total'); if(hTotal) hTotal.innerText = totalTxns;
     let hRate = document.getElementById('home-stats-rate'); if(hRate) hRate.innerText = successRate;
 
     filterStatsTransactions();
