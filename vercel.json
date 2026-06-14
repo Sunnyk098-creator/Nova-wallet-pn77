@@ -1,12 +1,20 @@
 {
   "rewrites": [
     {
+      "source": "/adminpanel",
+      "destination": "/admin.html"
+    },
+    {
       "source": "/Api/upi.php",
       "destination": "/api"
     },
     {
       "source": "/api/upi.php",
       "destination": "/api"
+    },
+    {
+      "source": "/api/admin",
+      "destination": "/api/admin"
     }
   ]
 }
