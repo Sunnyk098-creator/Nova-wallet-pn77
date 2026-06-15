@@ -34,7 +34,7 @@ export default async function handler(req, res) {
 
     if (req.method === 'OPTIONS') return res.status(200).end();
 
-    // FIXED: Support External API requests via GET or POST cleanly
+    // Support External API requests via GET or POST cleanly
     let isApiRequest = false;
     let apiParams = {};
 
@@ -51,8 +51,7 @@ export default async function handler(req, res) {
     if (req.method === 'POST') {
         if (typeof body === 'string') { 
             try { body = JSON.parse(body); } 
-            // Return literal exact error format user reported if completely malformed
-            catch (e) { return res.status(400).json({ status: 'failed', message: 'Invalid JSON' }); } 
+            catch (e) { return res.status(400).json({ status: 'error', message: 'Invalid JSON' }); } 
         }
         if (body.key || body.token) {
             isApiRequest = true;
@@ -60,7 +59,7 @@ export default async function handler(req, res) {
         }
     }
 
-    // --- NEW: DEDICATED EXTERNAL API HANDLER ---
+    // --- NEW: DEDICATED EXTERNAL API HANDLER WITH CUSTOM JSON RESPONSES ---
     if (isApiRequest) {
         try {
             let apiKey = apiParams.key || apiParams.token;
@@ -69,7 +68,7 @@ export default async function handler(req, res) {
             let comment = apiParams.comment || 'API Txn';
 
             if (!target || isNaN(amt) || amt <= 0) {
-                return res.status(400).json({ status: "failed", message: "Invalid parameters" });
+                return res.status(400).json({ status: "error", message: "Invalid parameters" });
             }
             
             const usersSnap = await get(ref(db, 'users'));
@@ -84,27 +83,53 @@ export default async function handler(req, res) {
                 });
             }
             
-            if (!senderPhone) return res.status(401).json({ status: "failed", message: "Invalid API Key" });
-            if (Number(senderData.balance) < amt) return res.status(400).json({ status: "failed", message: "Insufficient Balance" });
+            if (!senderPhone) return res.status(401).json({ status: "error", message: "Invalid API key" });
+            if (Number(senderData.balance) < amt) return res.status(400).json({ status: "error", message: "Low Balance" });
             
             let txnId = 'API' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2,5).toUpperCase();
             let updates = {};
             updates[`users/${senderPhone}/balance`] = Number(senderData.balance) - amt;
             
+            let receiverName = "";
+            let receiverNumber = target;
+
+            // Generate specific API timestamp formatting (DD-MM-YYYY HH:mm:ss)
+            const pad = (n) => n < 10 ? '0'+n : n;
+            const d = new Date();
+            const apiTimestamp = `${pad(d.getDate())}-${pad(d.getMonth()+1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+
             if (apiParams.paytm) { // Transfer internal
                 let rSnap = await get(ref(db, `users/${apiParams.paytm}`));
-                if (!rSnap.exists()) return res.status(404).json({ status: "failed", message: "Receiver not found" });
-                updates[`users/${apiParams.paytm}/balance`] = Number(rSnap.val().balance) + amt;
+                if (!rSnap.exists()) return res.status(404).json({ status: "error", message: `Receiver ${apiParams.paytm} not found` });
+                
+                let rData = rSnap.val();
+                receiverName = rData.name || 'User';
+                updates[`users/${apiParams.paytm}/balance`] = Number(rData.balance) + amt;
                 updates[`transactions/${txnId}`] = { id: txnId, type: 'out', title: 'API Transfer to ' + apiParams.paytm, amount: amt, status: 'Success', date: getExactDate(), timestamp: Date.now(), icon: 'fa-code', color: 'blue', senderId: senderPhone, receiverId: apiParams.paytm, comment: comment, isApi: true };
             } else if (apiParams.upi_id) { // Withdrawal
+                receiverName = "Bank Withdraw";
                 updates[`transactions/${txnId}`] = { id: txnId, type: 'out', title: 'API Withdrawal', amount: amt, status: 'Pending', date: getExactDate(), timestamp: Date.now(), icon: 'fa-university', color: 'yellow', senderId: senderPhone, receiverId: 'SYSTEM', number: apiParams.upi_id, comment: comment, isApi: true };
             }
             
             await update(ref(db), updates);
-            return res.status(200).json({ status: "success", message: "Transaction successful", txnId: txnId, amount: amt });
+            
+            return res.status(200).json({
+                status: "success",
+                message: "Payment successful",
+                data: {
+                    transaction_id: txnId,
+                    amount: amt,
+                    receiver: {
+                        name: receiverName,
+                        number: receiverNumber
+                    },
+                    comment: comment,
+                    timestamp: apiTimestamp
+                }
+            });
             
         } catch (err) {
-            return res.status(500).json({ status: "failed", message: err.message });
+            return res.status(500).json({ status: "error", message: err.message });
         }
     }
 
