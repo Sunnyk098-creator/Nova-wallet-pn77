@@ -24,6 +24,7 @@
 </head>
 <body class="font-sans pb-20 text-contrast transition-all duration-500">
 
+    <!-- 1. SPLASH SCREEN (1.2 Seconds) -->
     <div id="nova-splash-screen" class="fixed inset-0 z-[100000] paytm-receipt-bg flex flex-col items-center justify-center transition-opacity duration-400">
         <div class="w-32 h-32 rounded-full border-2 border-red-500 p-1 shadow-[0_0_30px_rgba(239,68,68,0.5)] animate-pulse">
             <img src="logo.png" onerror="this.src='https://api.dicebear.com/7.x/initials/svg?seed=NW'" class="w-full h-full object-cover rounded-full">
@@ -31,68 +32,62 @@
         <h1 class="mt-6 text-2xl font-black tracking-[0.2em] text-white uppercase drop-shadow-[0_0_10px_rgba(239,68,68,0.8)]">Nova Wallet</h1>
     </div>
 
+    <!-- 2. ACTION LOADING SCREEN (Post PIN Verification) -->
     <div id="action-loading-screen" class="fixed inset-0 z-[10000] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
         <div class="w-16 h-16 border-4 border-[#1a1a1a] border-t-red-500 rounded-full animate-spin mb-5"></div>
         <p class="text-xs font-black text-red-500 tracking-[0.2em] uppercase animate-pulse">Processing...</p>
     </div>
 
-    <div id="rocket-overlay" class="fixed inset-0 z-[9999] paytm-receipt-bg hidden flex-col items-center justify-center transition-opacity">
-        <div class="rocket-ground"></div>
-        <div id="rocket-wrapper" class="straight-rocket-wrapper">
-            <span class="straight-rocket">🚀</span>
-            <div class="rocket-fire"></div>
-        </div>
-    </div>
-
-    <div id="txn-result-overlay" class="fixed inset-0 z-[9998] paytm-receipt-bg hidden flex-col items-center p-6 text-center overflow-y-auto">
-        <div class="w-full flex justify-between items-center pt-4 mb-2">
-            <span class="text-xs font-black tracking-widest text-gray-400 uppercase">Action Completed</span>
+    <!-- 3. IMMEDIATE ACTION SUCCESS OVERLAY (PHONEPE STYLE) -->
+    <div id="txn-result-overlay" class="fixed inset-0 z-[9999] paytm-receipt-bg hidden flex-col p-6 overflow-y-auto">
+        <div class="w-full flex justify-between items-center pt-2 mb-10">
+            <span class="text-[10px] font-black tracking-widest text-gray-400 uppercase">Action Completed</span>
             <button onclick="closeSuccessOverlay()" class="text-gray-400 hover:text-white transition-colors"><i class="fas fa-times text-2xl"></i></button>
         </div>
         
-        <div id="txn-result-icon-bg" class="w-20 h-20 rounded-full flex items-center justify-center text-4xl mb-4 shadow-inner animate-[slideDown_0.5s_ease-out]">
-            <i id="txn-result-icon" class="fas fa-check"></i>
+        <div class="success-animation-container mb-6">
+            <svg class="checkmark-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+            </svg>
         </div>
         
-        <h2 id="txn-result-title" class="text-xl font-bold text-white mb-2 tracking-wide animate-[slideUpFade_0.5s_ease-out_0.1s] opacity-0" style="animation-fill-mode: forwards;">Payment Successful</h2>
-        
-        <div class="text-5xl font-black tracking-tight mb-8 animate-[slideUpFade_0.5s_ease-out_0.2s] opacity-0" style="animation-fill-mode: forwards;">
-            ₹<span id="txn-result-amount">0.00</span>
+        <div class="text-center success-text-anim w-full">
+            <h2 id="txn-result-title" class="text-xl font-black text-white mb-2 tracking-wide">Action Completed</h2>
+            <div class="text-5xl font-black tracking-tight mb-8 text-white flex justify-center items-center">
+                <span id="txn-result-sign"></span>₹<span id="txn-result-amount">0.00</span>
+            </div>
+
+            <div class="bg-[#121212] rounded-[1.5rem] p-5 shadow-sm w-full max-w-sm mx-auto border border-gray-800 relative overflow-hidden text-left">
+                <div class="flex items-center gap-4 mb-5 pb-5 border-b border-gray-800">
+                    <div class="w-14 h-14 rounded-full border border-gray-700 overflow-hidden shrink-0 bg-gray-900 flex items-center justify-center">
+                        <img id="txn-result-dp" src="" class="w-full h-full object-cover hidden">
+                        <span id="txn-result-initial" class="text-xl font-black text-gray-400">U</span>
+                    </div>
+                    <div class="overflow-hidden">
+                        <p class="text-[9px] text-gray-500 uppercase tracking-widest font-black mb-1">To / Detail</p>
+                        <p id="txn-result-name" class="font-black text-lg text-white truncate w-full">User Name</p>
+                        <p id="txn-result-desc" class="text-xs text-gray-400 font-mono mt-0.5 truncate">Details</p>
+                    </div>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-[9px] text-gray-500 font-black uppercase tracking-widest">Transaction ID</span>
+                        <span id="txn-result-id" class="text-xs font-mono font-black text-white truncate max-w-[150px] text-right">TXN...</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-[9px] text-gray-500 font-black uppercase tracking-widest">Date & Time</span>
+                        <span id="txn-result-date" class="text-[10px] font-bold text-white">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="closeSuccessOverlay()" class="mt-8 w-full max-w-sm mx-auto accent-bg text-white font-black py-4 rounded-xl shadow-lg tracking-widest uppercase btn-animate">BACK TO DASHBOARD</button>
         </div>
-
-        <div class="theme-card rounded-3xl p-6 shadow-sm w-full max-w-sm border border-gray-800 relative overflow-hidden animate-[slideUpFade_0.5s_ease-out_0.3s] opacity-0 text-left" style="animation-fill-mode: forwards;">
-            <div class="flex items-center gap-4 mb-6 pb-6 border-b border-gray-800">
-                <div class="w-14 h-14 rounded-full border-2 border-gray-700 overflow-hidden shrink-0 shadow-inner bg-gray-900">
-                    <img id="txn-result-dp" src="" class="w-full h-full object-cover hidden">
-                    <div id="txn-result-initial" class="w-full h-full flex items-center justify-center text-xl font-black text-gray-400">U</div>
-                </div>
-                <div class="overflow-hidden">
-                    <p class="text-[10px] text-gray-400 uppercase tracking-widest font-black mb-1">To / Detail</p>
-                    <p id="txn-result-name" class="font-black text-lg text-contrast truncate w-full">User Name</p>
-                    <p id="txn-result-desc" class="text-xs text-gray-500 font-mono mt-0.5 truncate">Details</p>
-                </div>
-            </div>
-            
-            <div id="txn-result-error-box" class="hidden mb-6 p-4 theme-card border border-red-500 rounded-xl">
-                <p class="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">Failure Reason</p>
-                <p id="txn-result-error-reason" class="text-sm font-bold text-red-400">Insufficient Balance</p>
-            </div>
-
-            <div class="space-y-4">
-                <div class="flex justify-between items-center">
-                    <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Transaction ID</span>
-                    <span id="txn-result-id" class="text-xs font-mono font-black text-contrast">TXN123456</span>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Date & Time</span>
-                    <span id="txn-result-date" class="text-xs font-bold text-contrast">--</span>
-                </div>
-            </div>
-        </div>
-
-        <button onclick="closeSuccessOverlay()" class="mt-8 mb-6 w-full max-w-sm accent-bg text-white font-black py-4 rounded-xl shadow-lg tracking-widest uppercase btn-animate animate-[slideUpFade_0.5s_ease-out_0.5s] opacity-0" style="animation-fill-mode: forwards;">BACK TO DASHBOARD</button>
     </div>
 
+    <!-- 4. DETAILED FULL-SCREEN RECEIPT MODAL (PAYTM STYLE HISTORY) -->
     <div id="detailed-receipt-modal" class="fixed inset-0 z-[9998] paytm-receipt-bg hidden flex-col p-5 overflow-y-auto">
         <div class="flex justify-between items-center mb-6 mt-2">
             <h2 class="text-lg font-black text-white tracking-widest uppercase">Transaction Details</h2>
@@ -136,10 +131,13 @@
                 <p id="receipt-category" class="text-sm font-bold text-gray-200">Category</p>
             </div>
 
+            <!-- Net Balance After removed -->
+
             <div id="receipt-lifafa-box" class="hidden bg-orange-900/10 border border-orange-500/20 rounded-2xl p-4">
                 <p class="text-[9px] font-black text-orange-500 uppercase tracking-widest mb-3"><i class="fas fa-gift"></i> Asset Details</p>
                 <div id="receipt-lifafa-stats" class="space-y-2 text-sm font-bold text-orange-100">
-                    </div>
+                    <!-- Injected dynamically via JS -->
+                </div>
                 <div id="receipt-lifafa-link-container" class="mt-4 pt-3 border-t border-orange-500/20 hidden">
                     <p class="text-[9px] font-black text-orange-500 uppercase tracking-widest mb-1.5">Share Link / Code</p>
                     <div class="flex items-center gap-2">
@@ -160,9 +158,10 @@
             </div>
         </div>
 
-        <button onclick="closeDetailedReceipt()" class="w-full bg-[#1a1a1a] border border-gray-800 text-white font-black py-4 rounded-xl uppercase tracking-widest text-sm mb-6 active:scale-95 transition-transform shadow-lg">Back To Home Screen</button>
+        <button onclick="closeDetailedReceipt()" class="w-full bg-[#1a1a1a] border border-gray-800 text-white font-black py-4 rounded-xl uppercase tracking-widest text-sm mb-6 active:scale-95 transition-transform shadow-lg">Back To Dashboard</button>
     </div>
 
+    <!-- SYSTEM MODALS & WRAPPERS -->
     <div id="maintenance-wrapper" class="fixed inset-0 theme-card z-[9999] hidden flex-col items-center justify-center p-6 text-center bg-[#050000]">
         <div class="w-32 h-32 mb-6 animate-pulse flex items-center justify-center mx-auto"><i class="fas fa-tools text-6xl text-red-500 bg-red-900/20 p-8 rounded-full border border-red-500/30 shadow-lg"></i></div>
         <h1 class="text-3xl font-black italic tracking-tight mb-3 text-white">SYSTEM <span class="text-red-500">MAINTENANCE</span></h1>
@@ -185,6 +184,7 @@
         <i class="fas fa-info-circle accent-text"></i> <span id="toastMsg" class="font-medium">Message</span>
     </div>
 
+    <!-- FULL SCREEN CUSTOM PIN PAD MODAL -->
     <div id="custom-pin-modal" class="fixed inset-0 z-[9999] hidden flex-col justify-center items-center bg-[#050000] transition-opacity duration-300 opacity-0">
         <div class="w-full max-w-sm px-6 text-center relative pt-10">
             <div class="w-20 h-20 bg-red-900/20 text-red-500 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 border border-red-500/30 shadow-[0_0_20px_rgba(239,68,68,0.2)]">
@@ -219,6 +219,7 @@
         </div>
     </div>
 
+    <!-- AUTH WRAPPER -->
     <div id="auth-wrapper" class="fixed inset-0 theme-card z-[200] overflow-y-auto hidden">
         <div id="auth-login" class="min-h-screen flex flex-col p-6 items-center justify-center relative font-bold">
             <div class="w-20 h-20 theme-card text-red-500 rounded-3xl flex items-center justify-center text-4xl mb-6 shadow-inner border border-red-500/50"><i class="fas fa-wallet animate-pulse"></i></div>
@@ -298,8 +299,10 @@
         </div>
     </div>
 
+    <!-- MAIN APP CONTAINER -->
     <main id="app-container">
         
+        <!-- FULL SCREEN SCANNER VIEW -->
         <div id="view-scan" class="view-section min-h-screen relative hidden z-[100]">
             <header class="absolute top-0 left-0 w-full p-4 z-[110] flex justify-between items-center bg-gradient-to-b from-black/90 to-transparent">
                 <button onclick="closeScanner()" class="w-10 h-10 bg-white/10 backdrop-blur-md rounded-full text-white flex items-center justify-center border border-white/20"><i class="fas fa-arrow-left"></i></button>
@@ -766,7 +769,8 @@
                     </div>
                 </form>
                 <div id="full-txn-list" class="theme-card rounded-2xl shadow-xl border border-gray-800 overflow-hidden flex flex-col bg-[#121212]">
-                    </div>
+                    <!-- Transactions List Populated via JS -->
+                </div>
             </div>
         </div>
 
