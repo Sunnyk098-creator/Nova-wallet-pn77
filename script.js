@@ -294,7 +294,7 @@ if(sNumEl) {
 }
 
 // ----------------------------------------------------
-// CUSTOM PIN PAD & ACTION INTERCEPTOR (FIXED)
+// CUSTOM PIN PAD & ACTION INTERCEPTOR
 // ----------------------------------------------------
 
 function initiateAction(type) {
@@ -360,16 +360,33 @@ function closePinModal() {
     setTimeout(() => document.getElementById('custom-pin-modal').classList.add('hidden'), 300);
 }
 
-// FIXED: Preserving action state so it doesn't get cleared before execution
+// ----------------------------------------------------
+// LOADING SCREEN + ACTION TRIGGER
+// ----------------------------------------------------
 function submitPinModal() {
     if(currentPinInput.length !== 4) return showToast("Enter 4-digit PIN");
     
     if(currentPinInput === currentUser?.pin) {
-        let actionToRun = pendingAction; // Save state
+        let actionToRun = pendingAction; 
         pendingAction = null; 
         currentPinInput = "";
         closePinModal(); 
-        executePendingAction(actionToRun); // Pass state securely
+
+        // Show loading screen for 1 second
+        const loader = document.getElementById('action-loading-screen');
+        if(loader) {
+            loader.style.opacity = '1';
+            loader.style.pointerEvents = 'auto';
+        }
+
+        setTimeout(() => {
+            if(loader) {
+                loader.style.opacity = '0';
+                loader.style.pointerEvents = 'none';
+            }
+            executePendingAction(actionToRun);
+        }, 1000);
+
     } else {
         showToast("Incorrect Security PIN!"); 
         currentPinInput = ""; 
@@ -388,7 +405,110 @@ async function executePendingAction(actionObj) {
 }
 
 // ----------------------------------------------------
-// CORE ACTIONS
+// DETAILED RECEIPTS POPULATION LOGIC
+// ----------------------------------------------------
+function showActionSuccess(data) {
+    let txn = data.txn;
+    if(!txn) return;
+
+    let titleEl = document.getElementById('receipt-main-title');
+    let dpContainer = document.getElementById('receipt-dp-container');
+    let dpImg = document.getElementById('receipt-dp');
+    
+    if (txn.type === 'out') { titleEl.innerText = `Payment to ${txn.name || 'User'}`; } 
+    else { titleEl.innerText = `Received from ${txn.name || 'User'}`; }
+    
+    dpImg.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(txn.name || 'User')}`;
+    dpContainer.classList.remove('hidden');
+
+    document.getElementById('receipt-date').innerText = txn.date;
+    
+    let amtEl = document.getElementById('receipt-amount');
+    amtEl.innerText = `${txn.type === 'in' ? '+' : '-'}₹${parseFloat(txn.amount).toFixed(2)}`;
+    amtEl.className = `text-5xl font-black tracking-tighter ${txn.type === 'in' ? 'text-green-500' : 'text-red-500'}`;
+    
+    let statusEl = document.getElementById('receipt-status');
+    if(txn.status === 'Success' || txn.status === 'Approved') {
+        statusEl.innerHTML = `<i class="fas fa-check-circle"></i> Success`;
+        statusEl.className = "inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border border-green-500/30 text-green-500 bg-green-900/20";
+    } else if(txn.status === 'Pending') {
+        statusEl.innerHTML = `<i class="fas fa-clock"></i> Pending`;
+        statusEl.className = "inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border border-yellow-500/30 text-yellow-500 bg-yellow-900/20";
+    } else {
+        statusEl.innerHTML = `<i class="fas fa-times-circle"></i> Failed`;
+        statusEl.className = "inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border border-red-500/30 text-red-500 bg-red-900/20";
+    }
+
+    document.getElementById('receipt-txn-id').innerText = txn.id;
+    
+    let methodEl = document.getElementById('receipt-method');
+    let catEl = document.getElementById('receipt-category');
+    if(txn.title.includes('Deposit')) { methodEl.innerHTML = `<i class="fas fa-university"></i> Bank/UPI Add`; catEl.innerText = "Self Deposit"; }
+    else if(txn.title.includes('Withdraw')) { methodEl.innerHTML = `<i class="fas fa-university"></i> Bank Withdraw`; catEl.innerText = "Withdrawal"; }
+    else if(txn.title.includes('Gift')) { methodEl.innerHTML = `<i class="fas fa-gift"></i> Gift Card`; catEl.innerText = "Voucher"; }
+    else if(txn.title.includes('Lifafa')) { methodEl.innerHTML = `<i class="fas fa-envelope-open-text"></i> Lifafa`; catEl.innerText = "Public Link"; }
+    else { methodEl.innerHTML = `<i class="fas fa-wallet"></i> Wallet Transfer`; catEl.innerText = "P2P Transfer"; }
+
+    document.getElementById('receipt-balance').innerText = `₹${currentBalance.toFixed(2)}`;
+
+    let notesBox = document.getElementById('receipt-notes-box');
+    let notesEl = document.getElementById('receipt-notes');
+    if(txn.number && txn.number !== 'N/A') {
+        notesEl.innerText = `Target: ${txn.number}`;
+        notesBox.classList.remove('hidden');
+    } else { notesBox.classList.add('hidden'); }
+
+    let commentBox = document.getElementById('receipt-comment-box');
+    let commentEl = document.getElementById('receipt-comment');
+    if(txn.comment) {
+        commentEl.innerText = txn.comment;
+        commentBox.classList.remove('hidden');
+    } else { commentBox.classList.add('hidden'); }
+
+    let lifafaBox = document.getElementById('receipt-lifafa-box');
+    let lifafaStats = document.getElementById('receipt-lifafa-stats');
+    let lifafaLinkContainer = document.getElementById('receipt-lifafa-link-container');
+    let lifafaLink = document.getElementById('receipt-lifafa-link');
+
+    if(data.isLifafa) {
+        lifafaStats.innerHTML = data.lifafaDetailsHtml;
+        lifafaBox.classList.remove('hidden');
+        if(data.lifafaLink) {
+            lifafaLink.value = data.lifafaLink;
+            lifafaLinkContainer.classList.remove('hidden');
+        } else {
+            lifafaLinkContainer.classList.add('hidden');
+        }
+    } else {
+        lifafaBox.classList.add('hidden');
+    }
+
+    document.getElementById('detailed-receipt-modal').classList.add('active');
+}
+
+function closeDetailedReceipt() {
+    document.getElementById('detailed-receipt-modal').classList.remove('active');
+}
+
+function copyReceiptData(elementId, isInput = false) {
+    let el = document.getElementById(elementId);
+    if(el) {
+        let text = isInput ? el.value : el.innerText;
+        navigator.clipboard.writeText(text);
+        showToast("Copied to clipboard!");
+    }
+}
+
+let currentModalTxnId = '';
+function openTxnModal(txnId) { 
+    let txn = transactions.find(t => t.id === txnId); 
+    if(!txn) return; 
+    currentModalTxnId = txn.id; 
+    showActionSuccess({ txn: txn });
+}
+
+// ----------------------------------------------------
+// CORE ACTIONS WITH RECEIPT INTEGRATION
 // ----------------------------------------------------
 
 async function processSend() {
@@ -396,7 +516,7 @@ async function processSend() {
     let comment = document.getElementById('send-comment').value.trim();
     try {
         let receiver = await apiCall('CHECK_USER', { phone: sendResolvedPhone }); 
-        if (!receiver) return showActionError({ amount: amt, detail: sendResolvedPhone, message: "Receiver not found!" });
+        if (!receiver) return showToast("Receiver not found!");
         let name = receiver.name || 'Unknown User'; 
 
         let txn = createTxnObj('out', 'Sent to ' + name, amt, 'Success', 'fa-paper-plane', 'yellow', name, sendResolvedPhone);
@@ -408,20 +528,20 @@ async function processSend() {
         sendTelegramMsg(currentUser?.tgUserId, formatTgMsg('out', 'Payment Sent to ' + name, amt, `TXN: ${txn.id}`)); 
         
         document.getElementById('form-send').reset(); 
-        currentBalance -= amt; updateUI(); 
-
-        showActionSuccess({ type: 'transfer', dp: receiver.dp, name: name, detail: sendResolvedPhone, amount: amt, txnId: txn.id });
-    } catch(e) { showActionError({ amount: amt, detail: sendResolvedPhone, message: e.message || "Payment processing failed." }); }
+        currentBalance -= amt; 
+        transactions.unshift(txn);
+        updateUI(); 
+        showActionSuccess({ txn: txn });
+    } catch(e) { showToast(e.message || "Payment processing failed."); }
 }
 
 async function processAdd() {
-    if(!checkCooldown()) return;
     let utr = document.getElementById('add-utr').value.trim(); 
     let amt = parseFloat(document.getElementById('add-amt').value);
     
-    if(isNaN(amt) || amt <= 0) return showActionError({ amount: amt, name: "Deposit Failed", message: "Invalid amount!"});
-    if (!utr) return showActionError({ amount: amt, name: "Deposit Failed", message: "UTR number is required!"});
-    if (!uploadedScreenshotBase64) return showActionError({ amount: amt, name: "Deposit Failed", message: "Please upload a payment screenshot!"});
+    if(isNaN(amt) || amt <= 0) return showToast("Invalid amount!");
+    if (!utr) return showToast("UTR number is required!");
+    if (!uploadedScreenshotBase64) return showToast("Please upload a payment screenshot!");
     
     try {
         let txn = createTxnObj('in', 'Deposit via UTR', amt, 'Pending', 'fa-clock', 'yellow', 'Self Deposit', utr);
@@ -437,8 +557,11 @@ async function processAdd() {
             btn.className = "w-full mb-6 py-4 px-4 rounded-xl text-xs font-black tracking-widest uppercase border-2 border-dashed border-red-500/50 text-red-400 bg-red-500/5 hover:bg-red-500/10 transition-colors flex items-center justify-center gap-2";
         }
         document.getElementById('screenshot-preview-container').classList.add('hidden');
-        showActionSuccess({ type: 'add', name: "Deposit Request Sent", detail: `UTR: ${utr}`, amount: amt, txnId: txn.id });
-    } catch (e) { showActionError({ amount: amt, detail: utr, message: e.message || "Deposit request failed." }); }
+        
+        transactions.unshift(txn);
+        updateUI();
+        showActionSuccess({ txn: txn });
+    } catch (e) { showToast(e.message || "Deposit request failed."); }
 }
 
 async function processBulk() {
@@ -455,18 +578,24 @@ async function processBulk() {
         } catch(e) {}
     }
     
-    if (resolvedReceivers.length === 0) return showActionError({ amount: amt, name: "Bulk Transfer", message: "No valid registered receivers found."});
+    if (resolvedReceivers.length === 0) return showToast("No valid registered receivers found.");
     let totalAmt = resolvedReceivers.length * amt; 
-    if(totalAmt > currentBalance) return showActionError({ amount: totalAmt, name: "Bulk Transfer", message: `Need ₹${totalAmt} for ${resolvedReceivers.length} users. Insufficient balance.`});
+    if(totalAmt > currentBalance) return showToast(`Need ₹${totalAmt} for ${resolvedReceivers.length} users. Insufficient balance.`);
     
     try {
         await apiCall('BULK_PAY', { sender: currentUser?.phone, receivers: resolvedReceivers, amount: amt, comment: comment, date: formatDateTime() });
         playSound('debit');
         sendTelegramMsg(currentUser?.tgUserId, formatTgMsg('out', `Bulk Sent to ${resolvedReceivers.length} users`, totalAmt, `Done!`)); 
-        currentBalance -= totalAmt; updateUI();
+        
+        let txn = createTxnObj('out', `Bulk Transfer`, totalAmt, 'Success', 'fa-users', 'purple', `Bulk to ${resolvedReceivers.length} Users`, 'N/A');
+        txn.comment = comment;
+        transactions.unshift(txn);
+        
+        currentBalance -= totalAmt; 
+        updateUI();
         document.getElementById('bulk-nums').value = ''; document.getElementById('bulk-amt').value = ''; document.getElementById('bulk-comment').value = ''; 
-        showActionSuccess({ type: 'bulk', name: `Bulk Transfer`, detail: `${resolvedReceivers.length} Total Users Successfully Sent`, amount: totalAmt, txnId: generateTxnId() });
-    } catch(e) { showActionError({ amount: totalAmt, name: "Bulk Transfer", message: e.message || "Bulk transfer failed." }); }
+        showActionSuccess({ txn: txn });
+    } catch(e) { showToast(e.message || "Bulk transfer failed."); }
 }
 
 async function processWithdraw() {
@@ -476,10 +605,11 @@ async function processWithdraw() {
         let txn = createTxnObj('out', 'Withdrawal Request', amt, 'Pending', 'fa-university', 'yellow', 'Bank Withdraw', upi);
         await apiCall('EXECUTE_TXN', { mode: 'WITHDRAW', sender: currentUser?.phone, amount: amt, txn: txn });
         playSound('debit');
+        transactions.unshift(txn);
         currentBalance -= amt; updateUI(); 
         document.getElementById('with-upi').value = ''; document.getElementById('with-amt').value = ''; 
-        showActionSuccess({ type: 'withdraw', name: "Withdraw Request Sent", detail: `UPI: ${upi}`, amount: amt, txnId: txn.id });
-    } catch(e) { showActionError({ amount: amt, name: "Withdraw Request", message: e.message || "Withdrawal request failed." }); }
+        showActionSuccess({ txn: txn });
+    } catch(e) { showToast(e.message || "Withdrawal request failed."); }
 }
 
 async function processLifafaCreate() {
@@ -502,11 +632,21 @@ async function processLifafaCreate() {
     let txn = createTxnObj('out', `Lifafa Created`, totalDeduction, `Success`, 'fa-envelope-open-text', 'yellow', 'Lifafa System', 'N/A');
     try {
         let lifafaId = await apiCall('CREATE_LIFAFA', { phone: currentUser?.phone, type: type, amountPerUser: amountPerUser, minAmount: minAmount, maxAmount: maxAmount, totalUsers: users, password: password, channels: channels, referActive: referActive, referAmount: referAmount, totalDeduction: totalDeduction, txn });
-        playSound('debit'); currentBalance -= totalDeduction; updateUI(); 
-        document.getElementById('lifafa-create-form-wrapper').classList.add('hidden');
-        document.getElementById('lifafa-result-link').value = `https://${window.location.host}/?lifafa=${lifafaId}`;
-        document.getElementById('lifafa-success-box').classList.remove('hidden');
-    } catch(e) { showActionError({ amount: totalDeduction, name: "Lifafa", message: e.message || "Failed to create Lifafa." }); }
+        playSound('debit'); 
+        currentBalance -= totalDeduction; 
+        transactions.unshift(txn);
+        updateUI(); 
+
+        let lifafaDetailsHtml = `
+            <div class="flex justify-between border-b border-orange-500/20 pb-1"><span>Amount Per User:</span> <span>₹${amountPerUser || (minAmount+'-'+maxAmount)}</span></div>
+            <div class="flex justify-between border-b border-orange-500/20 pb-1 pt-1"><span>Total Users:</span> <span>${users}</span></div>
+            <div class="flex justify-between border-b border-orange-500/20 pb-1 pt-1"><span>Access Code:</span> <span class="font-mono bg-orange-900/40 px-1 rounded">${password || 'None'}</span></div>
+            <div class="flex justify-between pt-1"><span>Refer & Earn:</span> <span>${referActive ? '₹'+referAmount : 'No'}</span></div>
+        `;
+        let lifafaLink = `https://${window.location.host}/?lifafa=${lifafaId}`;
+
+        showActionSuccess({ txn: txn, isLifafa: true, lifafaDetailsHtml: lifafaDetailsHtml, lifafaLink: lifafaLink });
+    } catch(e) { showToast(e.message || "Failed to create Lifafa."); }
 }
 
 async function processGiftCreate() {
@@ -519,36 +659,55 @@ async function processGiftCreate() {
     try {
         await apiCall('CREATE_GIFT', { phone: currentUser?.phone, code, amount: amt, users, txn });
         playSound('debit'); sendTelegramMsg(currentUser?.tgUserId, formatTgMsg('out', 'Gift Code Generated', total, `Code: <b>${code}</b>`)); 
-        currentBalance -= total; updateUI(); 
+        currentBalance -= total; 
+        transactions.unshift(txn);
+        updateUI(); 
         document.getElementById('gift-amt').value=''; document.getElementById('gift-users').value=''; 
-        showActionSuccess({ type: 'gift', name: "Gift Code Active", detail: `Code: ${code} (${users} Users)`, amount: total, txnId: txn.id });
-    } catch(e) { showActionError({ amount: total, name: "Gift Code", message: e.message || "Gift creation failed." }); }
+
+        let giftDetailsHtml = `
+            <div class="flex justify-between border-b border-orange-500/20 pb-1"><span>Amount Per User:</span> <span>₹${amt}</span></div>
+            <div class="flex justify-between border-b border-orange-500/20 pb-1 pt-1"><span>Total Users:</span> <span>${users}</span></div>
+            <div class="flex justify-between pt-1"><span>Gift Code:</span> <span class="font-mono text-white bg-orange-900/40 px-2 py-0.5 rounded tracking-widest">${code}</span></div>
+        `;
+
+        showActionSuccess({ txn: txn, isLifafa: true, lifafaDetailsHtml: giftDetailsHtml });
+    } catch(e) { showToast(e.message || "Gift creation failed."); }
 }
 
 async function processGiftClaim() {
     let code = document.getElementById('claim-code').value.toUpperCase(); 
-    if(code.length !== 5) return showActionError({ amount: 0, name: "Gift Claim", message: "Invalid Code format. Must be 5 digits."});
+    if(code.length !== 5) return showToast("Invalid Code format. Must be 5 digits.");
     try {
         let txn = createTxnObj('in', `Claimed Gift Code`, 0, `Code: ${code}`, 'fa-gift', 'green', 'Gift Code', 'N/A'); 
         let reward = await apiCall('CLAIM_GIFT', { phone: currentUser?.phone, code, txn });
         playSound('credit'); sendTelegramMsg(currentUser?.tgUserId, formatTgMsg('in', 'Gift Claimed', reward, `Code: <b>${code}</b>`)); 
-        document.getElementById('claim-code').value = ''; currentBalance += reward; updateUI(); 
-        showActionSuccess({ type: 'gift-claim', name: "Gift Code Redeemed", detail: `Code: ${code}`, amount: reward, txnId: txn.id });
-    } catch(e) { showActionError({ amount: 0, name: "Gift Claim", message: e.message || "Invalid code or already claimed." }); }
+        document.getElementById('claim-code').value = ''; 
+        currentBalance += reward; 
+        txn.amount = reward;
+        transactions.unshift(txn);
+        updateUI(); 
+        showActionSuccess({ txn: txn });
+    } catch(e) { showToast(e.message || "Invalid code or already claimed."); }
 }
 
 async function processKeeperLock() {
     let amt = parseFloat(document.getElementById('kl-amt').value); 
     let txn = createTxnObj('out', 'Locked in Keeper', amt, 'Success', 'fa-lock', 'orange', 'Self Vault', 'N/A');
     await apiCall('EXECUTE_TXN', { mode: 'KEEPER_LOCK', sender: currentUser?.phone, amount: amt, txn });
-    playSound('debit'); currentBalance -= amt; keeperBalance += amt; updateUI(); document.getElementById('kl-amt').value = ''; showToast(`₹${amt} safely locked!`);
+    playSound('debit'); currentBalance -= amt; keeperBalance += amt; 
+    transactions.unshift(txn);
+    updateUI(); document.getElementById('kl-amt').value = ''; 
+    showActionSuccess({ txn: txn });
 }
 
 async function processKeeperWithdraw() {
     let amt = parseFloat(document.getElementById('kw-amt').value); 
     let txn = createTxnObj('in', 'Withdrawn from Keeper', amt, 'Success', 'fa-unlock', 'green', 'Self Vault', 'N/A');
     await apiCall('EXECUTE_TXN', { mode: 'KEEPER_WITHDRAW', sender: currentUser?.phone, amount: Number(amt), txn });
-    playSound('credit'); keeperBalance -= amt; currentBalance += amt; updateUI(); document.getElementById('kw-amt').value = ''; showToast(`₹${amt} moved to Wallet!`);
+    playSound('credit'); keeperBalance -= amt; currentBalance += amt; 
+    transactions.unshift(txn);
+    updateUI(); document.getElementById('kw-amt').value = ''; 
+    showActionSuccess({ txn: txn });
 }
 
 // ----------------------------------------------------
@@ -835,53 +994,6 @@ function updateUI() {
     }
 }
 
-let currentModalTxnId = '';
-function openTxnModal(txnId) { 
-    let txn = transactions.find(t => t.id === txnId); if(!txn) return; 
-    currentModalTxnId = txn.id; 
-    document.getElementById('txnModalIcon').className = `fas ${txn.icon}`; 
-    
-    let modalSign = ''; let modalAmtClass = ''; let titleClass = 'text-white';
-    if (txn.status === 'Pending') { modalSign = ''; modalAmtClass = 'text-yellow-500'; titleClass = 'text-yellow-500'; } 
-    else if (txn.status === 'Rejected') { modalSign = ''; modalAmtClass = 'text-red-500'; titleClass = 'text-red-500'; } 
-    else {
-        if (txn.type === 'in') { modalSign = '+'; modalAmtClass = 'text-green-500'; titleClass = 'text-green-500'; } 
-        else { modalSign = '-'; modalAmtClass = 'text-red-500'; }
-    }
-
-    document.getElementById('txnModalTitle').innerText = txn.title; 
-    document.getElementById('txnModalTitle').className = `text-xl font-black ${titleClass}`;
-    document.getElementById('txnModalAmount').innerText = modalSign + '₹' + parseFloat(txn.amount).toFixed(2); 
-    document.getElementById('txnModalAmount').className = `text-3xl font-black mt-2 tracking-tight ${modalAmtClass}`; 
-    
-    const statusEl = document.getElementById('txnModalStatus');
-    if (statusEl) {
-        statusEl.innerText = txn.status;
-        statusEl.className = "text-xs font-black uppercase tracking-wider mt-2 rounded-full px-3 py-1 inline-block border";
-        if (txn.status === 'Success') { statusEl.style.backgroundColor = 'rgba(34, 197, 94, 0.15)'; statusEl.style.color = '#4ade80'; statusEl.style.borderColor = 'rgba(34, 197, 94, 0.3)'; } 
-        else if (txn.status === 'Pending') { statusColor = 'text-yellow-500'; statusEl.style.backgroundColor = 'rgba(234, 179, 8, 0.15)'; statusEl.style.color = '#facc15'; statusEl.style.borderColor = 'rgba(234, 179, 8, 0.3)'; } 
-        else if (txn.status === 'Rejected' || txn.status === 'Fail') { statusEl.style.backgroundColor = 'rgba(239, 68, 68, 0.15)'; statusEl.style.color = '#f87171'; statusEl.style.borderColor = 'rgba(239, 68, 68, 0.3)'; }
-    }
-
-    document.getElementById('txnModalType').innerText = txn.type === 'in' ? 'Received' : 'Sent'; 
-    document.getElementById('txnModalName').innerText = txn.name || 'N/A'; 
-    document.getElementById('txnModalNumber').innerText = txn.number || 'N/A'; 
-    document.getElementById('txnModalId').innerText = txn.id; 
-    document.getElementById('txnModalComment').innerText = txn.comment && txn.comment.trim() !== '' ? txn.comment : 'None';
-    document.getElementById('txnModalDate').innerText = txn.date; 
-
-    const ssContainer = document.getElementById('txnModalScreenshotContainer');
-    const ssImg = document.getElementById('txnModalScreenshotImg');
-    if (txn.screenshot) {
-        if (ssContainer && ssImg) { ssImg.src = txn.screenshot; ssContainer.classList.remove('hidden'); }
-    } else { if (ssContainer) ssContainer.classList.add('hidden'); }
-
-    document.getElementById('txnModal').classList.remove('hidden'); 
-    setTimeout(()=>document.getElementById('txnModal').classList.remove('opacity-0'), 10); 
-}
-
-function closeTxnModal() { document.getElementById('txnModal').classList.add('opacity-0'); setTimeout(()=>document.getElementById('txnModal').classList.add('hidden'), 300); }
-function copyTxnId() { navigator.clipboard.writeText(currentModalTxnId); showToast("Copied!"); }
 function showToast(msg) { const toast = document.getElementById('toast'); document.getElementById('toastMsg').innerText = msg; toast.classList.remove('hidden'); setTimeout(()=>toast.classList.remove('opacity-0'),10); setTimeout(()=>{toast.classList.add('opacity-0'); setTimeout(()=>toast.classList.add('hidden'),300);}, 3000); }
 function copyText(text) { navigator.clipboard.writeText(text); showToast("Copied!"); }
 
@@ -961,4 +1073,16 @@ function searchTxn() {
     }
 }
 
-window.onload = async () => { await checkAuth(); };
+// ----------------------------------------------------
+// INITIALIZATION WITH SPLASH SCREEN
+// ----------------------------------------------------
+window.onload = async () => { 
+    setTimeout(async () => {
+        const splash = document.getElementById('nova-splash-screen');
+        if(splash) {
+            splash.style.opacity = '0';
+            setTimeout(() => { splash.style.display = 'none'; }, 400);
+        }
+        await checkAuth(); 
+    }, 1200);
+};
