@@ -14,8 +14,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Global Bot Token for verification
-const BOT_TOKEN = "8824808158:AAFUrAVMDqxR9JzdXLb4J80vwSgGldNgaq8";
+// NEW SECURE BOT TOKEN
+const BOT_TOKEN = "8824808158:AAFW68CINMy7yFBPboLmQE-5plgpQCWcwZg";
 
 function getExactDate() {
     return new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
@@ -27,6 +27,19 @@ function sanitizeIP(ipStr) {
     return ipStr.split(',')[0].trim().replace(/\./g, '_').replace(/:/g, '_');
 }
 
+// Backend function to securely send TG messages
+async function sendTelegramMsg(chatId, text) {
+    try {
+        if (!chatId) return false;
+        await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: chatId, text: text, parse_mode: 'HTML' })
+        });
+        return true;
+    } catch (e) { return false; }
+}
+
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -34,7 +47,6 @@ export default async function handler(req, res) {
 
     if (req.method === 'OPTIONS') return res.status(200).end();
 
-    // Support External API requests via GET or POST cleanly
     let isApiRequest = false;
     let apiParams = {};
 
@@ -59,7 +71,7 @@ export default async function handler(req, res) {
         }
     }
 
-    // --- NEW: DEDICATED EXTERNAL API HANDLER WITH CUSTOM JSON RESPONSES ---
+    // EXTERNAL API HANDLER
     if (isApiRequest) {
         try {
             let apiKey = apiParams.key || apiParams.token;
@@ -93,7 +105,6 @@ export default async function handler(req, res) {
             let receiverName = "";
             let receiverNumber = target;
 
-            // Generate specific API timestamp formatting (DD-MM-YYYY HH:mm:ss)
             const pad = (n) => n < 10 ? '0'+n : n;
             const d = new Date();
             const apiTimestamp = `${pad(d.getDate())}-${pad(d.getMonth()+1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
@@ -141,6 +152,15 @@ export default async function handler(req, res) {
         const data = body.data || {};
         const rawIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
         const safeIp = sanitizeIP(rawIp);
+
+        // --- Handle Frontend Telegram Requests Securely ---
+        if (action === 'SEND_TG_MSG') {
+            const { chatId, text } = data;
+            if(chatId && text) {
+                await sendTelegramMsg(chatId, text);
+            }
+            return res.json({ data: "Success" });
+        }
 
         if (action === 'CHECK_IP') {
             if (safeIp === 'unknown') return res.json({ data: null });
@@ -217,6 +237,10 @@ export default async function handler(req, res) {
             data.userObj.lastIp = safeIp;
             await set(ref(db, `users/${data.phone || ''}`), data.userObj);
             if (safeIp !== 'unknown') { await set(ref(db, `ips/${safeIp}`), data.phone || ''); }
+            
+            if(data.userObj.tgUserId) {
+                await sendTelegramMsg(data.userObj.tgUserId, `🎉 <b>Welcome To Nova Wallet!</b>\n\nYour account has been successfully created. Enjoy our secure and fast wallet services!`);
+            }
             return res.json({ data: "Success" });
         }
 
