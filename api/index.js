@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, get, set, update, runTransaction } from "firebase/database";
+import { getDatabase, ref, get, set, update, runTransaction, increment } from "firebase/database";
 
 const firebaseConfig = {
   apiKey: "AIzaSyD5oCT3Qj2mvub0xjQsXVkGvyxm1Kc6aU8",
@@ -14,25 +14,14 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
+// Global Bot Token for verification
 const BOT_TOKEN = "8824808158:AAFUrAVMDqxR9JzdXLb4J80vwSgGldNgaq8";
 
 function getExactDate() {
     return new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
 }
 
-async function sendTelegramMsg(chatId, text) {
-    try {
-        if (!chatId) return false;
-        await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-            method: 'POST', 
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: chatId, text: text, parse_mode: 'HTML' })
-        });
-        return true;
-    } catch (e) { return false; }
-}
-
-// Format IP for Firebase keys (cannot contain '.', '#', '$', '[', or ']')
+// Format IP for Firebase keys
 function sanitizeIP(ipStr) {
     if (!ipStr) return 'unknown';
     return ipStr.split(',')[0].trim().replace(/\./g, '_').replace(/:/g, '_');
@@ -43,25 +32,91 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
 
+    if (req.method === 'OPTIONS') return res.status(200).end();
+
+    // FIXED: Support External API requests via GET or POST cleanly
+    let isApiRequest = false;
+    let apiParams = {};
+
     if (req.method === 'GET') {
-        return res.redirect(302, 'https://nova-wallet-pn77.vercel.app');
+        if (req.query && (req.query.key || req.query.token)) {
+            isApiRequest = true;
+            apiParams = req.query;
+        } else {
+            return res.redirect(302, 'https://nova-wallet-pn77.vercel.app');
+        }
     }
 
-    if (req.method === 'OPTIONS') return res.status(200).end();
+    let body = req.body || {};
+    if (req.method === 'POST') {
+        if (typeof body === 'string') { 
+            try { body = JSON.parse(body); } 
+            // Return literal exact error format user reported if completely malformed
+            catch (e) { return res.status(400).json({ status: 'failed', message: 'Invalid JSON' }); } 
+        }
+        if (body.key || body.token) {
+            isApiRequest = true;
+            apiParams = body;
+        }
+    }
+
+    // --- NEW: DEDICATED EXTERNAL API HANDLER ---
+    if (isApiRequest) {
+        try {
+            let apiKey = apiParams.key || apiParams.token;
+            let target = apiParams.paytm || apiParams.upi_id;
+            let amt = Number(apiParams.amount);
+            let comment = apiParams.comment || 'API Txn';
+
+            if (!target || isNaN(amt) || amt <= 0) {
+                return res.status(400).json({ status: "failed", message: "Invalid parameters" });
+            }
+            
+            const usersSnap = await get(ref(db, 'users'));
+            let senderPhone = null;
+            let senderData = null;
+            if (usersSnap.exists()) {
+                usersSnap.forEach(u => {
+                    if (u.val().apiKey === apiKey) {
+                        senderPhone = u.key;
+                        senderData = u.val();
+                    }
+                });
+            }
+            
+            if (!senderPhone) return res.status(401).json({ status: "failed", message: "Invalid API Key" });
+            if (Number(senderData.balance) < amt) return res.status(400).json({ status: "failed", message: "Insufficient Balance" });
+            
+            let txnId = 'API' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2,5).toUpperCase();
+            let updates = {};
+            updates[`users/${senderPhone}/balance`] = Number(senderData.balance) - amt;
+            
+            if (apiParams.paytm) { // Transfer internal
+                let rSnap = await get(ref(db, `users/${apiParams.paytm}`));
+                if (!rSnap.exists()) return res.status(404).json({ status: "failed", message: "Receiver not found" });
+                updates[`users/${apiParams.paytm}/balance`] = Number(rSnap.val().balance) + amt;
+                updates[`transactions/${txnId}`] = { id: txnId, type: 'out', title: 'API Transfer to ' + apiParams.paytm, amount: amt, status: 'Success', date: getExactDate(), timestamp: Date.now(), icon: 'fa-code', color: 'blue', senderId: senderPhone, receiverId: apiParams.paytm, comment: comment, isApi: true };
+            } else if (apiParams.upi_id) { // Withdrawal
+                updates[`transactions/${txnId}`] = { id: txnId, type: 'out', title: 'API Withdrawal', amount: amt, status: 'Pending', date: getExactDate(), timestamp: Date.now(), icon: 'fa-university', color: 'yellow', senderId: senderPhone, receiverId: 'SYSTEM', number: apiParams.upi_id, comment: comment, isApi: true };
+            }
+            
+            await update(ref(db), updates);
+            return res.status(200).json({ status: "success", message: "Transaction successful", txnId: txnId, amount: amt });
+            
+        } catch (err) {
+            return res.status(500).json({ status: "failed", message: err.message });
+        }
+    }
+
+    // INTERNAL APP HANDLER LOGIC
     if (req.method !== 'POST') return res.status(405).json({ error: "invalid" });
 
     try {
-        let body = req.body || {};
-        if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) {} }
-
         const action = body.action;
         const data = body.data || {};
-        
-        // Capture Client IP
         const rawIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
         const safeIp = sanitizeIP(rawIp);
 
-        // --- NEW: IP Based Auto-Login Check ---
         if (action === 'CHECK_IP') {
             if (safeIp === 'unknown') return res.json({ data: null });
             const ipSnap = await get(ref(db, `ips/${safeIp}`));
@@ -77,13 +132,9 @@ export default async function handler(req, res) {
             return res.json({ data: null });
         }
 
-        // --- NEW: IP Logout Action ---
         if (action === 'LOGOUT') {
             if (safeIp !== 'unknown') {
-                await update(ref(db), {
-                    [`users/${data.phone}/lastIp`]: null,
-                    [`ips/${safeIp}`]: null
-                });
+                await update(ref(db), { [`users/${data.phone}/lastIp`]: null, [`ips/${safeIp}`]: null });
             }
             return res.json({ data: "Success" });
         }
@@ -121,67 +172,30 @@ export default async function handler(req, res) {
 
         if (action === 'LOGIN') {
             const loginInput = String(data.phone || '').trim().toLowerCase();
-            let userSnap = null;
-            let userPhone = null;
-
+            let userSnap = null; let userPhone = null;
             if (loginInput.includes('@')) {
                 const usersSnap = await get(ref(db, 'users'));
-                if (usersSnap.exists()) {
-                    usersSnap.forEach(child => {
-                        let u = child.val();
-                        if (u.email && u.email.toLowerCase() === loginInput) {
-                            userSnap = child;
-                            userPhone = child.key;
-                        }
-                    });
-                }
-            } else {
-                userSnap = await get(ref(db, `users/${loginInput}`));
-                userPhone = loginInput;
-            }
+                if (usersSnap.exists()) { usersSnap.forEach(child => { let u = child.val(); if (u.email && u.email.toLowerCase() === loginInput) { userSnap = child; userPhone = child.key; } }); }
+            } else { userSnap = await get(ref(db, `users/${loginInput}`)); userPhone = loginInput; }
 
-            if (!userSnap || (typeof userSnap.exists === 'function' && !userSnap.exists()) || userSnap.val().password !== data.password) {
-                throw new Error("Invalid Phone/Email or Password!");
-            }
+            if (!userSnap || (typeof userSnap.exists === 'function' && !userSnap.exists()) || userSnap.val().password !== data.password) { throw new Error("Invalid Phone/Email or Password!"); }
             if (userSnap.val().isBanned) throw new Error("Account is Banned.");
             
-            let userData = userSnap.val();
-            userData.phone = userPhone; 
-            
-            // Save IP on Login
-            if (safeIp !== 'unknown') {
-                await update(ref(db), {
-                    [`users/${userPhone}/lastIp`]: safeIp,
-                    [`ips/${safeIp}`]: userPhone
-                });
-            }
-
+            let userData = userSnap.val(); userData.phone = userPhone; 
+            if (safeIp !== 'unknown') { await update(ref(db), { [`users/${userPhone}/lastIp`]: safeIp, [`ips/${safeIp}`]: userPhone }); }
             return res.json({ data: userData });
         }
 
         if (action === 'REGISTER') {
             const snap = await get(ref(db, `users/${data.phone || ''}`));
             if (snap.exists()) throw new Error("Phone number already registered!");
-            
-            data.userObj.lastIp = safeIp; // Save IP in user object
+            data.userObj.lastIp = safeIp;
             await set(ref(db, `users/${data.phone || ''}`), data.userObj);
-            
-            // Link IP to phone
-            if (safeIp !== 'unknown') {
-                await set(ref(db, `ips/${safeIp}`), data.phone || '');
-            }
-            
-            if(data.userObj.tgUserId) {
-                await sendTelegramMsg(data.userObj.tgUserId, `🎉 <b>Welcome To Nova Wallet!</b>\n\nYour account has been successfully created. Enjoy our secure and fast wallet services!`);
-            }
-
+            if (safeIp !== 'unknown') { await set(ref(db, `ips/${safeIp}`), data.phone || ''); }
             return res.json({ data: "Success" });
         }
 
-        if (action === 'UPDATE_CREDS') {
-            await update(ref(db, `users/${data.phone}`), { password: data.password, pin: data.pin });
-            return res.json({ data: "Success" });
-        }
+        if (action === 'UPDATE_CREDS') { await update(ref(db, `users/${data.phone}`), { password: data.password, pin: data.pin }); return res.json({ data: "Success" }); }
         
         if (action === 'UPDATE_PROFILE') {
             const { phone, name, tgUserId, botAlerts, email } = data;
@@ -228,10 +242,7 @@ export default async function handler(req, res) {
             return res.json({ data: "Success" });
         }
 
-        if (action === 'GENERATE_API') {
-            await update(ref(db, `users/${data.phone}`), { apiKey: data.newKey }); 
-            return res.json({ data: "Success" });
-        }
+        if (action === 'GENERATE_API') { await update(ref(db, `users/${data.phone}`), { apiKey: data.newKey }); return res.json({ data: "Success" }); }
 
         if (action === 'SET_CUSTOM_API') {
             const { phone, newKey } = data;
@@ -244,16 +255,8 @@ export default async function handler(req, res) {
             return res.json({ data: "Success" });
         }
 
-        if (action === 'UPDATE_PRIVACY') {
-            await update(ref(db), { [`users/${data.phone}/privacyMode`]: data.privacyMode });
-            return res.json({ data: "Success" });
-        }
-
-        if (action === 'TOGGLE_TXN_VISIBILITY') {
-            const { phone, txnId, isHidden } = data;
-            await update(ref(db), { [`users/${phone}/hiddenTxns/${txnId}`]: isHidden ? true : null });
-            return res.json({ data: "Success" });
-        }
+        if (action === 'UPDATE_PRIVACY') { await update(ref(db), { [`users/${data.phone}/privacyMode`]: data.privacyMode }); return res.json({ data: "Success" }); }
+        if (action === 'TOGGLE_TXN_VISIBILITY') { await update(ref(db), { [`users/${data.phone}/hiddenTxns/${data.txnId}`]: data.isHidden ? true : null }); return res.json({ data: "Success" }); }
 
         if (action === 'SYNC') {
             if (!data.phone) return res.json({ error: "invalid" });
@@ -273,17 +276,14 @@ export default async function handler(req, res) {
                 txns.sort((a, b) => b.timestamp - a.timestamp);
                 let postsArr = []; if (pSnap.exists()) pSnap.forEach(p => { postsArr.push(p.val()); });
                 return res.json({ data: { user: userData, settings: cSnap.val() || {}, txns: txns, posts: postsArr }});
-            } catch (syncErr) {
-                return res.json({ error: "invalid" });
-            }
+            } catch (syncErr) { return res.json({ error: "invalid" }); }
         }
 
         if (action === 'EXECUTE_TXN') {
             let amt = Number(data.amount) || 0;
             const uSnap = await get(ref(db, `users/${data.sender}`));
             if (!uSnap.exists()) throw new Error("User not found!");
-            let sBal = Number(uSnap.val().balance) || 0;
-            let sKeeper = Number(uSnap.val().keeperBalance) || 0;
+            let sBal = Number(uSnap.val().balance) || 0; let sKeeper = Number(uSnap.val().keeperBalance) || 0;
             
             if (['SEND', 'GHOST_SEND', 'WITHDRAW', 'KEEPER_LOCK'].includes(data.mode)) { if (sBal < amt) throw new Error("Insufficient Balance!"); }
             if (data.mode === 'KEEPER_WITHDRAW') { if (sKeeper < amt) throw new Error("Insufficient Keeper Balance!"); }
@@ -292,20 +292,15 @@ export default async function handler(req, res) {
             if (data.mode === 'SEND' || data.mode === 'GHOST_SEND') {
                 const rSnap = await get(ref(db, `users/${data.receiver}`));
                 if (!rSnap.exists()) throw new Error("Receiver not found!");
-                updates[`users/${data.sender}/balance`] = sBal - amt; 
-                updates[`users/${data.receiver}/balance`] = Number(rSnap.val().balance) + amt;
+                updates[`users/${data.sender}/balance`] = sBal - amt; updates[`users/${data.receiver}/balance`] = Number(rSnap.val().balance) + amt;
             }
             else if (data.mode === 'WITHDRAW') updates[`users/${data.sender}/balance`] = sBal - amt;
             else if (data.mode === 'KEEPER_LOCK') { updates[`users/${data.sender}/balance`] = sBal - amt; updates[`users/${data.sender}/keeperBalance`] = sKeeper + amt; } 
             else if (data.mode === 'KEEPER_WITHDRAW') { updates[`users/${data.sender}/keeperBalance`] = sKeeper - amt; updates[`users/${data.sender}/balance`] = sBal + amt; } 
             else if (data.mode === 'DEPOSIT') updates[`users/${data.sender}/balance`] = sBal + amt;
             
-            if(data.txn) {
-                data.txn.date = getExactDate();
-                updates[`transactions/${data.txn.id}`] = data.txn;
-            }
-            await update(ref(db), updates); 
-            return res.json({ data: "Success" });
+            if(data.txn) { data.txn.date = getExactDate(); updates[`transactions/${data.txn.id}`] = data.txn; }
+            await update(ref(db), updates); return res.json({ data: "Success" });
         }
 
         if (action === 'BULK_PAY') {
@@ -321,8 +316,7 @@ export default async function handler(req, res) {
                 let tId = 'TXN' + Date.now().toString(36).toUpperCase();
                 updates[`transactions/${tId}`] = { id: tId, type: 'out', title: 'Bulk Send', amount: data.amount, status: 'Success', date: getExactDate(), timestamp: Date.now(), icon: 'fa-users', color: 'purple', senderId: data.sender, receiverId: num };
             }
-            await update(ref(db), updates);
-            return res.json({ data: "Success" });
+            await update(ref(db), updates); return res.json({ data: "Success" });
         }
         
         if (action === 'CREATE_LIFAFA') {
@@ -331,32 +325,15 @@ export default async function handler(req, res) {
             if (!uSnap.exists() || Number(uSnap.val().balance) < totalDeduction) throw new Error("Insufficient Balance!");
             
             let lifId = Math.random().toString(36).substring(2, 14).toUpperCase();
-            
             let lifafaData = {
-                id: lifId,
-                createdBy: data.phone,
-                type: data.type || 'standard',
-                amountPerUser: Number(data.amountPerUser) || 0,
-                minAmount: Number(data.minAmount) || 0,
-                maxAmount: Number(data.maxAmount) || 0,
-                totalUsers: Number(data.totalUsers),
-                remainingUsers: Number(data.totalUsers),
-                hasPassword: !!data.password,
-                password: data.password || null,
-                channels: data.channels || [],
-                referActive: data.referActive || false,
-                referAmount: Number(data.referAmount) || 0,
-                status: 'ACTIVE',
-                timestamp: Date.now()
+                id: lifId, createdBy: data.phone, type: data.type || 'standard', amountPerUser: Number(data.amountPerUser) || 0,
+                minAmount: Number(data.minAmount) || 0, maxAmount: Number(data.maxAmount) || 0, totalUsers: Number(data.totalUsers),
+                remainingUsers: Number(data.totalUsers), hasPassword: !!data.password, password: data.password || null, channels: data.channels || [],
+                referActive: data.referActive || false, referAmount: Number(data.referAmount) || 0, status: 'ACTIVE', timestamp: Date.now()
             };
 
             data.txn.date = getExactDate();
-
-            await update(ref(db), { 
-                [`users/${data.phone}/balance`]: Number(uSnap.val().balance) - totalDeduction, 
-                [`lifafas/${lifId}`]: lifafaData, 
-                [`transactions/${data.txn.id}`]: data.txn 
-            });
+            await update(ref(db), { [`users/${data.phone}/balance`]: Number(uSnap.val().balance) - totalDeduction, [`lifafas/${lifId}`]: lifafaData, [`transactions/${data.txn.id}`]: data.txn });
             return res.json({ data: lifId });
         }
 
@@ -365,18 +342,7 @@ export default async function handler(req, res) {
             if (!lifSnap.exists()) throw new Error("Lifafa not found or expired.");
             let lifafa = lifSnap.val();
             let alreadyClaimed = lifafa.claimers && lifafa.claimers[data.phone] ? true : false;
-            
-            return res.json({ data: {
-                id: lifafa.id,
-                type: lifafa.type,
-                remainingUsers: lifafa.remainingUsers,
-                totalUsers: lifafa.totalUsers,
-                amountPerUser: lifafa.amountPerUser,
-                hasPassword: lifafa.hasPassword,
-                channels: lifafa.channels || [],
-                referActive: lifafa.referActive,
-                alreadyClaimed: alreadyClaimed
-            }});
+            return res.json({ data: { id: lifafa.id, type: lifafa.type, remainingUsers: lifafa.remainingUsers, totalUsers: lifafa.totalUsers, amountPerUser: lifafa.amountPerUser, hasPassword: lifafa.hasPassword, channels: lifafa.channels || [], referActive: lifafa.referActive, alreadyClaimed: alreadyClaimed }});
         }
 
         if (action === 'VERIFY_LIFAFA_CHANNELS') {
@@ -384,69 +350,38 @@ export default async function handler(req, res) {
             if (!lifSnap.exists()) throw new Error("Lifafa not found.");
             let lifafa = lifSnap.val();
             
-            if (!lifafa.channels || lifafa.channels.length === 0) {
-                return res.json({ data: "Success" }); 
-            }
-
+            if (!lifafa.channels || lifafa.channels.length === 0) return res.json({ data: "Success" }); 
             for (let channel of lifafa.channels) {
                 let url = `https://api.telegram.org/bot${BOT_TOKEN}/getChatMember?chat_id=${channel}&user_id=${data.tgUserId}`;
                 try {
-                    let tgRes = await fetch(url);
-                    let tgData = await tgRes.json();
+                    let tgRes = await fetch(url); let tgData = await tgRes.json();
                     if (!tgData.ok) throw new Error(`Please join channel: ${channel}`);
                     let status = tgData.result.status;
-                    if (!['member', 'administrator', 'creator'].includes(status)) {
-                        throw new Error(`You have not joined ${channel}`);
-                    }
-                } catch(err) {
-                    throw new Error(err.message || "Failed to verify channel membership.");
-                }
+                    if (!['member', 'administrator', 'creator'].includes(status)) throw new Error(`You have not joined ${channel}`);
+                } catch(err) { throw new Error(err.message || "Failed to verify channel membership."); }
             }
             return res.json({ data: "Success" });
         }
 
         if (action === 'CLAIM_LIFAFA') {
-            const lifafaRef = ref(db, `lifafas/${data.lifafaId}`); 
-            await update(ref(db), { dummy: null }); 
-
+            const lifafaRef = ref(db, `lifafas/${data.lifafaId}`); await update(ref(db), { dummy: null }); 
             const result = await runTransaction(lifafaRef, (currentData) => {
-                if (currentData === null) return null; 
-                if (currentData.claimers && currentData.claimers[data.phone]) return; 
-                if (currentData.remainingUsers <= 0) return; 
-                
-                if (currentData.hasPassword && currentData.password !== data.password) {
-                    throw new Error("Incorrect Lifafa Password!");
-                }
-
-                currentData.remainingUsers -= 1; 
-                if (!currentData.claimers) currentData.claimers = {}; 
-                currentData.claimers[data.phone] = true; 
-                return currentData;
+                if (currentData === null) return null; if (currentData.claimers && currentData.claimers[data.phone]) return; if (currentData.remainingUsers <= 0) return; 
+                if (currentData.hasPassword && currentData.password !== data.password) throw new Error("Incorrect Lifafa Password!");
+                currentData.remainingUsers -= 1; if (!currentData.claimers) currentData.claimers = {}; currentData.claimers[data.phone] = true; return currentData;
             });
 
             if (!result.committed) throw new Error("Lifafa invalid, empty, or already claimed by you.");
             
-            let lifafaData = result.snapshot.val();
-            let reward = 0;
-
-            if (lifafaData.type === 'scratch') {
-                let min = Number(lifafaData.minAmount);
-                let max = Number(lifafaData.maxAmount);
-                reward = Math.floor(Math.random() * (max - min + 1)) + min;
-            } else if (lifafaData.type === 'coin') {
-                let win = Math.random() < 0.5;
-                reward = win ? (Number(lifafaData.amountPerUser) * 2) : 0;
-            } else {
-                reward = Number(lifafaData.amountPerUser);
-            }
+            let lifafaData = result.snapshot.val(); let reward = 0;
+            if (lifafaData.type === 'scratch') { let min = Number(lifafaData.minAmount); let max = Number(lifafaData.maxAmount); reward = Math.floor(Math.random() * (max - min + 1)) + min; } 
+            else if (lifafaData.type === 'coin') { let win = Math.random() < 0.5; reward = win ? (Number(lifafaData.amountPerUser) * 2) : 0; } 
+            else { reward = Number(lifafaData.amountPerUser); }
 
             const uSnap = await get(ref(db, `users/${data.phone}`));
-            
             const updates = {};
             updates[`users/${data.phone}/balance`] = Number(uSnap.val().balance) + reward; 
-            data.txn.date = getExactDate();
-            data.txn.amount = reward;
-            updates[`transactions/${data.txn.id}`] = data.txn;
+            data.txn.date = getExactDate(); data.txn.amount = reward; updates[`transactions/${data.txn.id}`] = data.txn;
 
             if (lifafaData.referActive && data.referrerPhone && data.referrerPhone !== data.phone) {
                 const refSnap = await get(ref(db, `users/${data.referrerPhone}`));
@@ -455,22 +390,16 @@ export default async function handler(req, res) {
                     if (referReward > 0) {
                         updates[`users/${data.referrerPhone}/balance`] = Number(refSnap.val().balance) + referReward;
                         let refTxnId = 'TXN' + Date.now().toString(36).toUpperCase();
-                        updates[`transactions/${refTxnId}`] = {
-                            id: refTxnId, type: 'in', title: 'Lifafa Referral Reward', amount: referReward,
-                            status: 'Success', date: getExactDate(), timestamp: Date.now(),
-                            icon: 'fa-user-plus', color: 'blue', senderId: 'SYSTEM', receiverId: data.referrerPhone, name: 'Referral System'
-                        };
+                        updates[`transactions/${refTxnId}`] = { id: refTxnId, type: 'in', title: 'Lifafa Referral Reward', amount: referReward, status: 'Success', date: getExactDate(), timestamp: Date.now(), icon: 'fa-user-plus', color: 'blue', senderId: 'SYSTEM', receiverId: data.referrerPhone, name: 'Referral System' };
                     }
                 }
             }
 
-            await update(ref(db), updates); 
-            return res.json({ data: { amount: reward, type: lifafaData.type, referActive: lifafaData.referActive } });
+            await update(ref(db), updates); return res.json({ data: { amount: reward, type: lifafaData.type, referActive: lifafaData.referActive } });
         }
 
         if (action === 'CREATE_GIFT') {
-            let amt = Number(data.amount) || 0;
-            const total = amt * data.users;
+            let amt = Number(data.amount) || 0; const total = amt * data.users;
             const snap = await get(ref(db, `users/${data.phone}`));
             if (!snap.exists() || Number(snap.val().balance) < total) throw new Error("Insufficient Balance!");
             data.txn.date = getExactDate();
