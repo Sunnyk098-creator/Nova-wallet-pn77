@@ -372,7 +372,6 @@ function submitPinModal() {
         currentPinInput = "";
         closePinModal(); 
 
-        // Show loading screen for 1 second
         const loader = document.getElementById('action-loading-screen');
         if(loader) {
             loader.style.opacity = '1';
@@ -405,12 +404,64 @@ async function executePendingAction(actionObj) {
 }
 
 // ----------------------------------------------------
-// DETAILED RECEIPTS POPULATION LOGIC
+// DUAL RECEIPT UIs LOGIC
 // ----------------------------------------------------
+
+// 1. Immediate Success (Rocket UI)
 function showActionSuccess(data) {
     let txn = data.txn;
     if(!txn) return;
 
+    let rocketOverlay = document.getElementById('rocket-overlay');
+    if(rocketOverlay) {
+        rocketOverlay.classList.remove('hidden');
+        setTimeout(() => { rocketOverlay.classList.add('hidden'); }, 1500);
+    }
+
+    document.getElementById('txn-result-amount').innerText = parseFloat(txn.amount).toFixed(2);
+    document.getElementById('txn-result-name').innerText = txn.name || 'User';
+    document.getElementById('txn-result-desc').innerText = txn.number || 'N/A';
+    document.getElementById('txn-result-id').innerText = txn.id;
+    document.getElementById('txn-result-date').innerText = txn.date;
+
+    if (data.isLifafa) {
+        document.getElementById('txn-result-desc').innerHTML = data.lifafaDetailsHtml + (data.lifafaLink ? `<br><br><span class="bg-red-900/50 text-red-500 px-2 py-1 rounded border border-red-500 font-mono text-[10px] break-all select-all">${data.lifafaLink}</span>` : '');
+    }
+
+    let dpImg = document.getElementById('txn-result-dp');
+    let initialDiv = document.getElementById('txn-result-initial');
+    dpImg.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(txn.name || 'User')}`;
+    dpImg.classList.remove('hidden');
+    initialDiv.classList.add('hidden');
+
+    let titleEl = document.getElementById('txn-result-title');
+    let iconEl = document.getElementById('txn-result-icon');
+    let iconBg = document.getElementById('txn-result-icon-bg');
+
+    if (txn.status === 'Success' || txn.status === 'Approved') {
+        titleEl.innerText = "Action Completed";
+        iconEl.className = "fas fa-check text-green-500";
+        iconBg.className = "w-20 h-20 rounded-full flex items-center justify-center text-4xl mb-4 shadow-inner bg-green-900/20 border border-green-500/30 animate-[slideDown_0.5s_ease-out]";
+    } else if (txn.status === 'Pending') {
+        titleEl.innerText = "Request Pending";
+        iconEl.className = "fas fa-clock text-yellow-500";
+        iconBg.className = "w-20 h-20 rounded-full flex items-center justify-center text-4xl mb-4 shadow-inner bg-yellow-900/20 border border-yellow-500/30 animate-[slideDown_0.5s_ease-out]";
+    }
+
+    document.getElementById('txn-result-overlay').classList.remove('hidden');
+}
+
+function closeSuccessOverlay() {
+    document.getElementById('txn-result-overlay').classList.add('hidden');
+}
+
+// 2. Detailed Transaction Modal (History UI)
+let currentModalTxnId = '';
+function openTxnModal(txnId) { 
+    let txn = transactions.find(t => t.id === txnId); 
+    if(!txn) return; 
+    currentModalTxnId = txn.id; 
+    
     let titleEl = document.getElementById('receipt-main-title');
     let dpContainer = document.getElementById('receipt-dp-container');
     let dpImg = document.getElementById('receipt-dp');
@@ -443,13 +494,13 @@ function showActionSuccess(data) {
     
     let methodEl = document.getElementById('receipt-method');
     let catEl = document.getElementById('receipt-category');
+    
     if(txn.title.includes('Deposit')) { methodEl.innerHTML = `<i class="fas fa-university"></i> Bank/UPI Add`; catEl.innerText = "Self Deposit"; }
     else if(txn.title.includes('Withdraw')) { methodEl.innerHTML = `<i class="fas fa-university"></i> Bank Withdraw`; catEl.innerText = "Withdrawal"; }
     else if(txn.title.includes('Gift')) { methodEl.innerHTML = `<i class="fas fa-gift"></i> Gift Card`; catEl.innerText = "Voucher"; }
     else if(txn.title.includes('Lifafa')) { methodEl.innerHTML = `<i class="fas fa-envelope-open-text"></i> Lifafa`; catEl.innerText = "Public Link"; }
-    else { methodEl.innerHTML = `<i class="fas fa-wallet"></i> Wallet Transfer`; catEl.innerText = "P2P Transfer"; }
-
-    document.getElementById('receipt-balance').innerText = `₹${currentBalance.toFixed(2)}`;
+    else if(txn.isApi) { methodEl.innerHTML = `<i class="fas fa-code"></i> API Transfer`; catEl.innerText = "P2P received"; }
+    else { methodEl.innerHTML = `<i class="fas fa-exchange-alt"></i> Wallet Transfer`; catEl.innerText = "P2P Transfer"; }
 
     let notesBox = document.getElementById('receipt-notes-box');
     let notesEl = document.getElementById('receipt-notes');
@@ -465,24 +516,6 @@ function showActionSuccess(data) {
         commentBox.classList.remove('hidden');
     } else { commentBox.classList.add('hidden'); }
 
-    let lifafaBox = document.getElementById('receipt-lifafa-box');
-    let lifafaStats = document.getElementById('receipt-lifafa-stats');
-    let lifafaLinkContainer = document.getElementById('receipt-lifafa-link-container');
-    let lifafaLink = document.getElementById('receipt-lifafa-link');
-
-    if(data.isLifafa) {
-        lifafaStats.innerHTML = data.lifafaDetailsHtml;
-        lifafaBox.classList.remove('hidden');
-        if(data.lifafaLink) {
-            lifafaLink.value = data.lifafaLink;
-            lifafaLinkContainer.classList.remove('hidden');
-        } else {
-            lifafaLinkContainer.classList.add('hidden');
-        }
-    } else {
-        lifafaBox.classList.add('hidden');
-    }
-
     document.getElementById('detailed-receipt-modal').classList.add('active');
 }
 
@@ -497,14 +530,6 @@ function copyReceiptData(elementId, isInput = false) {
         navigator.clipboard.writeText(text);
         showToast("Copied to clipboard!");
     }
-}
-
-let currentModalTxnId = '';
-function openTxnModal(txnId) { 
-    let txn = transactions.find(t => t.id === txnId); 
-    if(!txn) return; 
-    currentModalTxnId = txn.id; 
-    showActionSuccess({ txn: txn });
 }
 
 // ----------------------------------------------------
@@ -629,7 +654,9 @@ async function processLifafaCreate() {
     let maxBaseDeduction = type === 'standard' ? amountPerUser * users : (type === 'coin' ? (amountPerUser * 2) * users : maxAmount * users);
     let totalDeduction = maxBaseDeduction + (referActive ? (referAmount * users) : 0);
     
-    let txn = createTxnObj('out', `Lifafa Created`, totalDeduction, `Success`, 'fa-envelope-open-text', 'yellow', 'Lifafa System', 'N/A');
+    let txn = createTxnObj('out', `Lifafa Created`, totalDeduction, 'Success', 'fa-envelope-open-text', 'yellow', 'Lifafa System', 'N/A');
+    txn.comment = `Users: ${users} | Pass: ${password || 'None'}`;
+    
     try {
         let lifafaId = await apiCall('CREATE_LIFAFA', { phone: currentUser?.phone, type: type, amountPerUser: amountPerUser, minAmount: minAmount, maxAmount: maxAmount, totalUsers: users, password: password, channels: channels, referActive: referActive, referAmount: referAmount, totalDeduction: totalDeduction, txn });
         playSound('debit'); 
@@ -637,15 +664,14 @@ async function processLifafaCreate() {
         transactions.unshift(txn);
         updateUI(); 
 
-        let lifafaDetailsHtml = `
-            <div class="flex justify-between border-b border-orange-500/20 pb-1"><span>Amount Per User:</span> <span>₹${amountPerUser || (minAmount+'-'+maxAmount)}</span></div>
-            <div class="flex justify-between border-b border-orange-500/20 pb-1 pt-1"><span>Total Users:</span> <span>${users}</span></div>
-            <div class="flex justify-between border-b border-orange-500/20 pb-1 pt-1"><span>Access Code:</span> <span class="font-mono bg-orange-900/40 px-1 rounded">${password || 'None'}</span></div>
-            <div class="flex justify-between pt-1"><span>Refer & Earn:</span> <span>${referActive ? '₹'+referAmount : 'No'}</span></div>
-        `;
+        let lifafaDetailsHtml = `Users: ${users} | Base: ₹${amountPerUser || (minAmount+'-'+maxAmount)}`;
         let lifafaLink = `https://${window.location.host}/?lifafa=${lifafaId}`;
 
         showActionSuccess({ txn: txn, isLifafa: true, lifafaDetailsHtml: lifafaDetailsHtml, lifafaLink: lifafaLink });
+        
+        document.getElementById('lifafa-create-form-wrapper').classList.add('hidden');
+        document.getElementById('lifafa-result-link').value = lifafaLink;
+        document.getElementById('lifafa-success-box').classList.remove('hidden');
     } catch(e) { showToast(e.message || "Failed to create Lifafa."); }
 }
 
@@ -654,7 +680,9 @@ async function processGiftCreate() {
     let users = parseInt(document.getElementById('gift-users').value); 
     let total = amt * users;
     let code = Math.random().toString(36).substring(2, 7).toUpperCase();
-    let txn = createTxnObj('out', `Gift Code Created`, total, `Code: ${code}`, 'fa-gift', 'pink', 'Gift System', 'N/A');
+    
+    let txn = createTxnObj('out', `Gift Code Created`, total, 'Success', 'fa-gift', 'pink', 'Gift System', 'N/A');
+    txn.comment = 'Code: ' + code;
 
     try {
         await apiCall('CREATE_GIFT', { phone: currentUser?.phone, code, amount: amt, users, txn });
@@ -664,13 +692,8 @@ async function processGiftCreate() {
         updateUI(); 
         document.getElementById('gift-amt').value=''; document.getElementById('gift-users').value=''; 
 
-        let giftDetailsHtml = `
-            <div class="flex justify-between border-b border-orange-500/20 pb-1"><span>Amount Per User:</span> <span>₹${amt}</span></div>
-            <div class="flex justify-between border-b border-orange-500/20 pb-1 pt-1"><span>Total Users:</span> <span>${users}</span></div>
-            <div class="flex justify-between pt-1"><span>Gift Code:</span> <span class="font-mono text-white bg-orange-900/40 px-2 py-0.5 rounded tracking-widest">${code}</span></div>
-        `;
-
-        showActionSuccess({ txn: txn, isLifafa: true, lifafaDetailsHtml: giftDetailsHtml });
+        let giftDetailsHtml = `Users: ${users} | Per User: ₹${amt}`;
+        showActionSuccess({ txn: txn, isLifafa: true, lifafaDetailsHtml: giftDetailsHtml, lifafaLink: code });
     } catch(e) { showToast(e.message || "Gift creation failed."); }
 }
 
@@ -678,7 +701,8 @@ async function processGiftClaim() {
     let code = document.getElementById('claim-code').value.toUpperCase(); 
     if(code.length !== 5) return showToast("Invalid Code format. Must be 5 digits.");
     try {
-        let txn = createTxnObj('in', `Claimed Gift Code`, 0, `Code: ${code}`, 'fa-gift', 'green', 'Gift Code', 'N/A'); 
+        let txn = createTxnObj('in', `Claimed Gift Code`, 0, 'Success', 'fa-gift', 'green', 'Gift Code', 'N/A'); 
+        txn.comment = 'Code: ' + code;
         let reward = await apiCall('CLAIM_GIFT', { phone: currentUser?.phone, code, txn });
         playSound('credit'); sendTelegramMsg(currentUser?.tgUserId, formatTgMsg('in', 'Gift Claimed', reward, `Code: <b>${code}</b>`)); 
         document.getElementById('claim-code').value = ''; 
@@ -984,7 +1008,7 @@ function updateUI() {
                     if (txn.type === 'in') { statusColor = 'text-green-500'; amountClass = 'text-green-500'; titleClass = 'text-green-500'; sign = '+'; } 
                     else { statusColor = 'text-green-500'; amountClass = 'text-red-500'; sign = '-'; }
                 }
-                html += `<div onclick="openTxnModal('${txn.id}')" class="flex justify-between items-center p-4 border-b border-gray-800 hover:bg-gray-900 theme-card cursor-pointer transition-colors"><div class="flex items-center gap-3"><div class="w-11 h-11 rounded-2xl bg-[#0a0a0a] text-white flex items-center justify-center text-lg border border-gray-800 shadow-inner"><i class="fas ${txn.icon}"></i></div><div><p class="text-sm font-bold ${titleClass}">${txn.title}</p><p class="text-[10px] ${statusColor} font-bold mt-0.5 tracking-wider uppercase">${txn.status} • ${txn.date}</p></div></div><p class="font-black ${amountClass} tracking-wide">${sign}₹${parseFloat(txn.amount).toFixed(2)}</p></div>`;
+                html += `<div onclick="openTxnModal('${txn.id}')" class="flex justify-between items-center p-4 border-b border-gray-800 hover:bg-gray-900 theme-card cursor-pointer transition-colors"><div class="flex items-center gap-3"><div class="w-11 h-11 rounded-2xl bg-[#0a0a0a] text-white flex items-center justify-center text-lg border border-gray-800 shadow-inner"><i class=\"fas ${txn.icon}\"></i></div><div><p class="text-sm font-bold ${titleClass}">${txn.title}</p><p class="text-[10px] ${statusColor} font-bold mt-0.5 tracking-wider uppercase">${txn.status} • ${txn.date}</p></div></div><p class="font-black ${amountClass} tracking-wide">${sign}₹${parseFloat(txn.amount).toFixed(2)}</p></div>`;
             });
             return html;
         };
