@@ -404,55 +404,58 @@ async function executePendingAction(actionObj) {
 }
 
 // ----------------------------------------------------
-// DUAL RECEIPT UIs LOGIC
+// DUAL RECEIPT UIs LOGIC (Null-Safe)
 // ----------------------------------------------------
 
-// 1. Immediate Success (Rocket UI)
+// 1. Immediate Success (PhonePe Style Circular Animation)
 function showActionSuccess(data) {
     let txn = data.txn;
     if(!txn) return;
 
-    let rocketOverlay = document.getElementById('rocket-overlay');
-    if(rocketOverlay) {
-        rocketOverlay.classList.remove('hidden');
-        setTimeout(() => { rocketOverlay.classList.add('hidden'); }, 1500);
-    }
+    let amtEl = document.getElementById('txn-result-amount');
+    if (amtEl) amtEl.innerText = parseFloat(txn.amount).toFixed(2);
+    
+    let signEl = document.getElementById('txn-result-sign');
+    if (signEl) signEl.innerText = txn.type === 'in' ? '+' : '-';
 
-    document.getElementById('txn-result-amount').innerText = parseFloat(txn.amount).toFixed(2);
-    document.getElementById('txn-result-name').innerText = txn.name || 'User';
-    document.getElementById('txn-result-desc').innerText = txn.number || 'N/A';
-    document.getElementById('txn-result-id').innerText = txn.id;
-    document.getElementById('txn-result-date').innerText = txn.date;
+    let nameEl = document.getElementById('txn-result-name');
+    if (nameEl) nameEl.innerText = txn.name || 'User';
 
-    if (data.isLifafa) {
-        document.getElementById('txn-result-desc').innerHTML = data.lifafaDetailsHtml + (data.lifafaLink ? `<br><br><span class="bg-red-900/50 text-red-500 px-2 py-1 rounded border border-red-500 font-mono text-[10px] break-all select-all">${data.lifafaLink}</span>` : '');
+    let descEl = document.getElementById('txn-result-desc');
+    if (descEl) descEl.innerText = txn.number || 'N/A';
+
+    let idEl = document.getElementById('txn-result-id');
+    if (idEl) idEl.innerText = txn.id;
+
+    let dateEl = document.getElementById('txn-result-date');
+    if (dateEl) dateEl.innerText = txn.date;
+
+    if (data.isLifafa && descEl) {
+        descEl.innerHTML = data.lifafaDetailsHtml + (data.lifafaLink ? `<br><br><span class="bg-red-900/50 text-red-500 px-2 py-1 rounded border border-red-500 font-mono text-[10px] break-all select-all">${data.lifafaLink}</span>` : '');
     }
 
     let dpImg = document.getElementById('txn-result-dp');
     let initialDiv = document.getElementById('txn-result-initial');
-    dpImg.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(txn.name || 'User')}`;
-    dpImg.classList.remove('hidden');
-    initialDiv.classList.add('hidden');
+    if (dpImg) {
+        dpImg.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(txn.name || 'User')}`;
+        dpImg.classList.remove('hidden');
+    }
+    if (initialDiv) initialDiv.classList.add('hidden');
 
     let titleEl = document.getElementById('txn-result-title');
-    let iconEl = document.getElementById('txn-result-icon');
-    let iconBg = document.getElementById('txn-result-icon-bg');
-
     if (txn.status === 'Success' || txn.status === 'Approved') {
-        titleEl.innerText = "Action Completed";
-        iconEl.className = "fas fa-check text-green-500";
-        iconBg.className = "w-20 h-20 rounded-full flex items-center justify-center text-4xl mb-4 shadow-inner bg-green-900/20 border border-green-500/30 animate-[slideDown_0.5s_ease-out]";
+        if(titleEl) titleEl.innerText = "Action Completed";
     } else if (txn.status === 'Pending') {
-        titleEl.innerText = "Request Pending";
-        iconEl.className = "fas fa-clock text-yellow-500";
-        iconBg.className = "w-20 h-20 rounded-full flex items-center justify-center text-4xl mb-4 shadow-inner bg-yellow-900/20 border border-yellow-500/30 animate-[slideDown_0.5s_ease-out]";
+        if(titleEl) titleEl.innerText = "Request Pending";
     }
 
-    document.getElementById('txn-result-overlay').classList.remove('hidden');
+    let overlay = document.getElementById('txn-result-overlay');
+    if (overlay) overlay.classList.remove('hidden');
 }
 
 function closeSuccessOverlay() {
-    document.getElementById('txn-result-overlay').classList.add('hidden');
+    let overlay = document.getElementById('txn-result-overlay');
+    if(overlay) overlay.classList.add('hidden');
 }
 
 // 2. Detailed Transaction Modal (History UI)
@@ -466,61 +469,77 @@ function openTxnModal(txnId) {
     let dpContainer = document.getElementById('receipt-dp-container');
     let dpImg = document.getElementById('receipt-dp');
     
-    if (txn.type === 'out') { titleEl.innerText = `Payment to ${txn.name || 'User'}`; } 
-    else { titleEl.innerText = `Received from ${txn.name || 'User'}`; }
+    if(titleEl) {
+        if (txn.type === 'out') { titleEl.innerText = `Payment to ${txn.name || 'User'}`; } 
+        else { titleEl.innerText = `Received from ${txn.name || 'User'}`; }
+    }
     
-    dpImg.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(txn.name || 'User')}`;
-    dpContainer.classList.remove('hidden');
+    if(dpImg) dpImg.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(txn.name || 'User')}`;
+    if(dpContainer) dpContainer.classList.remove('hidden');
 
-    document.getElementById('receipt-date').innerText = txn.date;
+    let dateEl = document.getElementById('receipt-date');
+    if(dateEl) dateEl.innerText = txn.date;
     
     let amtEl = document.getElementById('receipt-amount');
-    amtEl.innerText = `${txn.type === 'in' ? '+' : '-'}₹${parseFloat(txn.amount).toFixed(2)}`;
-    amtEl.className = `text-5xl font-black tracking-tighter ${txn.type === 'in' ? 'text-green-500' : 'text-red-500'}`;
+    if(amtEl) {
+        amtEl.innerText = `${txn.type === 'in' ? '+' : '-'}₹${parseFloat(txn.amount).toFixed(2)}`;
+        amtEl.className = `text-5xl font-black tracking-tighter ${txn.type === 'in' ? 'text-green-500' : 'text-red-500'}`;
+    }
     
     let statusEl = document.getElementById('receipt-status');
-    if(txn.status === 'Success' || txn.status === 'Approved') {
-        statusEl.innerHTML = `<i class="fas fa-check-circle"></i> Success`;
-        statusEl.className = "inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border border-green-500/30 text-green-500 bg-green-900/20";
-    } else if(txn.status === 'Pending') {
-        statusEl.innerHTML = `<i class="fas fa-clock"></i> Pending`;
-        statusEl.className = "inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border border-yellow-500/30 text-yellow-500 bg-yellow-900/20";
-    } else {
-        statusEl.innerHTML = `<i class="fas fa-times-circle"></i> Failed`;
-        statusEl.className = "inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border border-red-500/30 text-red-500 bg-red-900/20";
+    if(statusEl) {
+        if(txn.status === 'Success' || txn.status === 'Approved') {
+            statusEl.innerHTML = `<i class="fas fa-check-circle"></i> Success`;
+            statusEl.className = "inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border border-green-500/30 text-green-500 bg-green-900/20";
+        } else if(txn.status === 'Pending') {
+            statusEl.innerHTML = `<i class="fas fa-clock"></i> Pending`;
+            statusEl.className = "inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border border-yellow-500/30 text-yellow-500 bg-yellow-900/20";
+        } else {
+            statusEl.innerHTML = `<i class="fas fa-times-circle"></i> Failed`;
+            statusEl.className = "inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border border-red-500/30 text-red-500 bg-red-900/20";
+        }
     }
 
-    document.getElementById('receipt-txn-id').innerText = txn.id;
+    let txnIdEl = document.getElementById('receipt-txn-id');
+    if(txnIdEl) txnIdEl.innerText = txn.id;
     
     let methodEl = document.getElementById('receipt-method');
     let catEl = document.getElementById('receipt-category');
     
-    if(txn.title.includes('Deposit')) { methodEl.innerHTML = `<i class="fas fa-university"></i> Bank/UPI Add`; catEl.innerText = "Self Deposit"; }
-    else if(txn.title.includes('Withdraw')) { methodEl.innerHTML = `<i class="fas fa-university"></i> Bank Withdraw`; catEl.innerText = "Withdrawal"; }
-    else if(txn.title.includes('Gift')) { methodEl.innerHTML = `<i class="fas fa-gift"></i> Gift Card`; catEl.innerText = "Voucher"; }
-    else if(txn.title.includes('Lifafa')) { methodEl.innerHTML = `<i class="fas fa-envelope-open-text"></i> Lifafa`; catEl.innerText = "Public Link"; }
-    else if(txn.isApi) { methodEl.innerHTML = `<i class="fas fa-code"></i> API Transfer`; catEl.innerText = "P2P received"; }
-    else { methodEl.innerHTML = `<i class="fas fa-exchange-alt"></i> Wallet Transfer`; catEl.innerText = "P2P Transfer"; }
+    if(methodEl && catEl) {
+        if(txn.title.includes('Deposit')) { methodEl.innerHTML = `<i class="fas fa-university"></i> Bank/UPI Add`; catEl.innerText = "Self Deposit"; }
+        else if(txn.title.includes('Withdraw')) { methodEl.innerHTML = `<i class="fas fa-university"></i> Bank Withdraw`; catEl.innerText = "Withdrawal"; }
+        else if(txn.title.includes('Gift')) { methodEl.innerHTML = `<i class="fas fa-gift"></i> Gift Card`; catEl.innerText = "Voucher"; }
+        else if(txn.title.includes('Lifafa')) { methodEl.innerHTML = `<i class="fas fa-envelope-open-text"></i> Lifafa`; catEl.innerText = "Public Link"; }
+        else if(txn.isApi) { methodEl.innerHTML = `<i class="fas fa-code"></i> API Transfer`; catEl.innerText = "P2P received"; }
+        else { methodEl.innerHTML = `<i class="fas fa-exchange-alt"></i> Wallet Transfer`; catEl.innerText = "P2P Transfer"; }
+    }
 
     let notesBox = document.getElementById('receipt-notes-box');
     let notesEl = document.getElementById('receipt-notes');
-    if(txn.number && txn.number !== 'N/A') {
-        notesEl.innerText = `Target: ${txn.number}`;
-        notesBox.classList.remove('hidden');
-    } else { notesBox.classList.add('hidden'); }
+    if(notesBox && notesEl) {
+        if(txn.number && txn.number !== 'N/A') {
+            notesEl.innerText = `Target: ${txn.number}`;
+            notesBox.classList.remove('hidden');
+        } else { notesBox.classList.add('hidden'); }
+    }
 
     let commentBox = document.getElementById('receipt-comment-box');
     let commentEl = document.getElementById('receipt-comment');
-    if(txn.comment) {
-        commentEl.innerText = txn.comment;
-        commentBox.classList.remove('hidden');
-    } else { commentBox.classList.add('hidden'); }
+    if(commentBox && commentEl) {
+        if(txn.comment) {
+            commentEl.innerText = txn.comment;
+            commentBox.classList.remove('hidden');
+        } else { commentBox.classList.add('hidden'); }
+    }
 
-    document.getElementById('detailed-receipt-modal').classList.add('active');
+    let receiptModal = document.getElementById('detailed-receipt-modal');
+    if(receiptModal) receiptModal.classList.add('active');
 }
 
 function closeDetailedReceipt() {
-    document.getElementById('detailed-receipt-modal').classList.remove('active');
+    let receiptModal = document.getElementById('detailed-receipt-modal');
+    if(receiptModal) receiptModal.classList.remove('active');
 }
 
 function copyReceiptData(elementId, isInput = false) {
@@ -664,7 +683,12 @@ async function processLifafaCreate() {
         transactions.unshift(txn);
         updateUI(); 
 
-        let lifafaDetailsHtml = `Users: ${users} | Base: ₹${amountPerUser || (minAmount+'-'+maxAmount)}`;
+        let lifafaDetailsHtml = `
+            <div class="flex justify-between border-b border-orange-500/20 pb-1"><span>Amount Per User:</span> <span>₹${amountPerUser || (minAmount+'-'+maxAmount)}</span></div>
+            <div class="flex justify-between border-b border-orange-500/20 pb-1 pt-1"><span>Total Users:</span> <span>${users}</span></div>
+            <div class="flex justify-between border-b border-orange-500/20 pb-1 pt-1"><span>Access Code:</span> <span class="font-mono bg-orange-900/40 px-1 rounded">${password || 'None'}</span></div>
+            <div class="flex justify-between pt-1"><span>Refer & Earn:</span> <span>${referActive ? '₹'+referAmount : 'No'}</span></div>
+        `;
         let lifafaLink = `https://${window.location.host}/?lifafa=${lifafaId}`;
 
         showActionSuccess({ txn: txn, isLifafa: true, lifafaDetailsHtml: lifafaDetailsHtml, lifafaLink: lifafaLink });
@@ -692,7 +716,12 @@ async function processGiftCreate() {
         updateUI(); 
         document.getElementById('gift-amt').value=''; document.getElementById('gift-users').value=''; 
 
-        let giftDetailsHtml = `Users: ${users} | Per User: ₹${amt}`;
+        let giftDetailsHtml = `
+            <div class="flex justify-between border-b border-orange-500/20 pb-1"><span>Amount Per User:</span> <span>₹${amt}</span></div>
+            <div class="flex justify-between border-b border-orange-500/20 pb-1 pt-1"><span>Total Users:</span> <span>${users}</span></div>
+            <div class="flex justify-between pt-1"><span>Gift Code:</span> <span class="font-mono text-white bg-orange-900/40 px-2 py-0.5 rounded tracking-widest">${code}</span></div>
+        `;
+
         showActionSuccess({ txn: txn, isLifafa: true, lifafaDetailsHtml: giftDetailsHtml, lifafaLink: code });
     } catch(e) { showToast(e.message || "Gift creation failed."); }
 }
