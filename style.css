@@ -350,6 +350,47 @@ body {
 }
 
 /* ----------------------------------------------------
+   IMMEDIATE PAYMENT SUCCESS (ROCKET UI)
+   ---------------------------------------------------- */
+.paytm-receipt-bg { background-color: var(--theme-bg); color: var(--theme-text); }
+.rocket-ground {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 20%;
+    background: #0a0a0a;
+    border-top: 2px solid var(--accent-main);
+}
+.straight-rocket-wrapper {
+    position: absolute;
+    bottom: 20%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: rocketFlyUp 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.straight-rocket {
+    font-size: 4rem;
+    z-index: 10;
+}
+.rocket-fire {
+    width: 20px;
+    height: 40px;
+    background: linear-gradient(to bottom, #facc15, #ef4444, transparent);
+    border-radius: 50% 50% 0 0;
+    margin-top: -10px;
+    animation: fireFlicker 0.1s infinite alternate;
+}
+@keyframes rocketFlyUp {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-120vh); }
+}
+@keyframes fireFlicker {
+    0% { transform: scaleY(1); opacity: 0.8; }
+    100% { transform: scaleY(1.2); opacity: 1; }
+}
+
+/* ----------------------------------------------------
    DETAILED RECEIPT MODAL (PAYTM STYLE ADAPTED TO NOVA)
    ---------------------------------------------------- */
 #detailed-receipt-modal {
@@ -454,8 +495,6 @@ input:focus, textarea:focus, select:focus { border-radius: 0.75rem !important; }
 
 .animate-shake { animation: failShake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
 @keyframes failShake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(4px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-6px, 0, 0); } 40%, 60% { transform: translate3d(6px, 0, 0); } }
-
-.paytm-receipt-bg { background-color: #050000; color: #ffffff; }
 
 ::-webkit-scrollbar { display: none; } 
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
