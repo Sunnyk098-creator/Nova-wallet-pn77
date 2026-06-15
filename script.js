@@ -98,7 +98,6 @@ async function regenerateApiKey() {
 
 function showAuthView(view) { ['login', 'signup', 'otp', 'reset-pin'].forEach(v => document.getElementById('auth-' + v).classList.add('hidden')); document.getElementById('auth-' + view).classList.remove('hidden'); }
 
-// --- FIXED: IP LOGOUT IMPLEMENTATION ---
 async function logoutUser() { 
     if (currentUser && currentUser.phone) {
         try { await apiCall('LOGOUT', { phone: currentUser.phone }); } catch(e) {}
@@ -108,10 +107,8 @@ async function logoutUser() {
     location.reload(); 
 }
 
-// --- FIXED: IP AUTO LOGIN & STRICT SESSION ---
 async function checkAuth() {
     try {
-        // Step 1: Check IP Auto Login
         let userFromIp = await apiCall('CHECK_IP', {});
         if (userFromIp && !userFromIp.isBanned) {
             currentUser = userFromIp;
@@ -123,7 +120,6 @@ async function checkAuth() {
         }
     } catch(e) { console.log("IP Check skipped."); }
 
-    // Step 2: Fallback to LocalStorage
     let sessionPhone = localStorage.getItem('novaSession');
     if (sessionPhone) {
         try {
@@ -136,12 +132,10 @@ async function checkAuth() {
                 document.getElementById('auth-wrapper').classList.add('hidden'); 
                 initApp();
             } else { 
-                // Explicitly deleted user
                 localStorage.removeItem('novaSession');
                 document.getElementById('auth-wrapper').classList.remove('hidden'); showAuthView('login');
             }
         } catch(e) { 
-            // FIXED: Do NOT logout if DB errors out or internet goes off
             console.warn("Auth Check Network Error. Continuing session blindly.");
             setTimeout(checkAuth, 3000); 
         }
@@ -218,7 +212,6 @@ async function syncLoop() {
     setTimeout(syncLoop, 3000); 
 }
 
-// --- FIXED: RELIABLE DB SYNC ---
 async function syncData() {
     if(!currentUser) return;
     try {
@@ -253,10 +246,7 @@ async function syncData() {
         }
         updateUI();
         updateStatsDashboard();
-    } catch(e) {
-        // Suppress errors, NO AUTO LOGOUT
-        console.warn("DB Sync Background Error Ignored.");
-    }
+    } catch(e) { console.warn("DB Sync Background Error Ignored."); }
 }
 
 function toggleBalanceVisibility() {
@@ -287,7 +277,6 @@ if(sNumEl) {
                     if(user) {
                         sendResolvedPhone = user.resolvedPhone || user.phone;
                         let dpUrl = user.dp || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name)}`;
-                        
                         nameField.className = "w-full bg-[#1a1a1a] border border-red-500/30 rounded-xl px-4 py-3 text-sm mb-5 font-bold cursor-not-allowed transition-all min-h-[60px] flex items-center shadow-lg text-white";
                         nameField.innerHTML = `
                             <div class="flex items-center gap-3 w-full">
@@ -305,7 +294,7 @@ if(sNumEl) {
 }
 
 // ----------------------------------------------------
-// CUSTOM PIN PAD & ACTION INTERCEPTOR
+// CUSTOM PIN PAD & ACTION INTERCEPTOR (FIXED)
 // ----------------------------------------------------
 
 function initiateAction(type) {
@@ -351,17 +340,11 @@ function initiateAction(type) {
 }
 
 function pinKeyPress(num) {
-    if(currentPinInput.length < 4) {
-        currentPinInput += num;
-        updatePinDashes();
-    }
+    if(currentPinInput.length < 4) { currentPinInput += num; updatePinDashes(); }
 }
 
 function pinKeyBackspace() {
-    if(currentPinInput.length > 0) {
-        currentPinInput = currentPinInput.slice(0, -1);
-        updatePinDashes();
-    }
+    if(currentPinInput.length > 0) { currentPinInput = currentPinInput.slice(0, -1); updatePinDashes(); }
 }
 
 function updatePinDashes() {
@@ -375,26 +358,33 @@ function updatePinDashes() {
 function closePinModal() {
     document.getElementById('custom-pin-modal').classList.add('opacity-0');
     setTimeout(() => document.getElementById('custom-pin-modal').classList.add('hidden'), 300);
-    pendingAction = null; currentPinInput = "";
 }
 
+// FIXED: Preserving action state so it doesn't get cleared before execution
 function submitPinModal() {
     if(currentPinInput.length !== 4) return showToast("Enter 4-digit PIN");
+    
     if(currentPinInput === currentUser?.pin) {
-        closePinModal(); executePendingAction();
+        let actionToRun = pendingAction; // Save state
+        pendingAction = null; 
+        currentPinInput = "";
+        closePinModal(); 
+        executePendingAction(actionToRun); // Pass state securely
     } else {
-        showToast("Incorrect Security PIN!"); currentPinInput = ""; updatePinDashes();
+        showToast("Incorrect Security PIN!"); 
+        currentPinInput = ""; 
+        updatePinDashes();
     }
 }
 
-async function executePendingAction() {
-    if(pendingAction === 'send') await processSend();
-    else if(pendingAction === 'bulk') await processBulk();
-    else if(pendingAction === 'withdraw') await processWithdraw();
-    else if(pendingAction === 'lifafa') await processLifafaCreate();
-    else if(pendingAction === 'gift') await processGiftCreate();
-    else if(pendingAction === 'keeper_lock') await processKeeperLock();
-    else if(pendingAction === 'keeper_with') await processKeeperWithdraw();
+async function executePendingAction(actionObj) {
+    if(actionObj === 'send') await processSend();
+    else if(actionObj === 'bulk') await processBulk();
+    else if(actionObj === 'withdraw') await processWithdraw();
+    else if(actionObj === 'lifafa') await processLifafaCreate();
+    else if(actionObj === 'gift') await processGiftCreate();
+    else if(actionObj === 'keeper_lock') await processKeeperLock();
+    else if(actionObj === 'keeper_with') await processKeeperWithdraw();
 }
 
 // ----------------------------------------------------
@@ -492,6 +482,75 @@ async function processWithdraw() {
     } catch(e) { showActionError({ amount: amt, name: "Withdraw Request", message: e.message || "Withdrawal request failed." }); }
 }
 
+async function processLifafaCreate() {
+    let type = document.getElementById('lif-type').value;
+    let users = parseInt(document.getElementById('lif-users').value); 
+    let amountPerUser = 0, minAmount = 0, maxAmount = 0;
+    if(type === 'standard' || type === 'coin') { amountPerUser = parseFloat(document.getElementById('lif-amt').value); } 
+    else { minAmount = parseFloat(document.getElementById('lif-min-amt').value); maxAmount = parseFloat(document.getElementById('lif-max-amt').value); }
+    
+    let referActive = document.getElementById('lif-refer-toggle') && document.getElementById('lif-refer-toggle').checked;
+    let referAmount = referActive ? parseFloat(document.getElementById('lif-refer-amt').value) : 0;
+    let password = document.getElementById('lif-password').value.trim();
+    
+    let channelInputs = document.querySelectorAll('.lif-channel-input');
+    let channels = []; channelInputs.forEach(input => { if(input.value.trim()) channels.push(input.value.trim()); });
+    
+    let maxBaseDeduction = type === 'standard' ? amountPerUser * users : (type === 'coin' ? (amountPerUser * 2) * users : maxAmount * users);
+    let totalDeduction = maxBaseDeduction + (referActive ? (referAmount * users) : 0);
+    
+    let txn = createTxnObj('out', `Lifafa Created`, totalDeduction, `Success`, 'fa-envelope-open-text', 'yellow', 'Lifafa System', 'N/A');
+    try {
+        let lifafaId = await apiCall('CREATE_LIFAFA', { phone: currentUser?.phone, type: type, amountPerUser: amountPerUser, minAmount: minAmount, maxAmount: maxAmount, totalUsers: users, password: password, channels: channels, referActive: referActive, referAmount: referAmount, totalDeduction: totalDeduction, txn });
+        playSound('debit'); currentBalance -= totalDeduction; updateUI(); 
+        document.getElementById('lifafa-create-form-wrapper').classList.add('hidden');
+        document.getElementById('lifafa-result-link').value = `https://${window.location.host}/?lifafa=${lifafaId}`;
+        document.getElementById('lifafa-success-box').classList.remove('hidden');
+    } catch(e) { showActionError({ amount: totalDeduction, name: "Lifafa", message: e.message || "Failed to create Lifafa." }); }
+}
+
+async function processGiftCreate() {
+    let amt = parseFloat(document.getElementById('gift-amt').value); 
+    let users = parseInt(document.getElementById('gift-users').value); 
+    let total = amt * users;
+    let code = Math.random().toString(36).substring(2, 7).toUpperCase();
+    let txn = createTxnObj('out', `Gift Code Created`, total, `Code: ${code}`, 'fa-gift', 'pink', 'Gift System', 'N/A');
+
+    try {
+        await apiCall('CREATE_GIFT', { phone: currentUser?.phone, code, amount: amt, users, txn });
+        playSound('debit'); sendTelegramMsg(currentUser?.tgUserId, formatTgMsg('out', 'Gift Code Generated', total, `Code: <b>${code}</b>`)); 
+        currentBalance -= total; updateUI(); 
+        document.getElementById('gift-amt').value=''; document.getElementById('gift-users').value=''; 
+        showActionSuccess({ type: 'gift', name: "Gift Code Active", detail: `Code: ${code} (${users} Users)`, amount: total, txnId: txn.id });
+    } catch(e) { showActionError({ amount: total, name: "Gift Code", message: e.message || "Gift creation failed." }); }
+}
+
+async function processGiftClaim() {
+    let code = document.getElementById('claim-code').value.toUpperCase(); 
+    if(code.length !== 5) return showActionError({ amount: 0, name: "Gift Claim", message: "Invalid Code format. Must be 5 digits."});
+    try {
+        let txn = createTxnObj('in', `Claimed Gift Code`, 0, `Code: ${code}`, 'fa-gift', 'green', 'Gift Code', 'N/A'); 
+        let reward = await apiCall('CLAIM_GIFT', { phone: currentUser?.phone, code, txn });
+        playSound('credit'); sendTelegramMsg(currentUser?.tgUserId, formatTgMsg('in', 'Gift Claimed', reward, `Code: <b>${code}</b>`)); 
+        document.getElementById('claim-code').value = ''; currentBalance += reward; updateUI(); 
+        showActionSuccess({ type: 'gift-claim', name: "Gift Code Redeemed", detail: `Code: ${code}`, amount: reward, txnId: txn.id });
+    } catch(e) { showActionError({ amount: 0, name: "Gift Claim", message: e.message || "Invalid code or already claimed." }); }
+}
+
+async function processKeeperLock() {
+    let amt = parseFloat(document.getElementById('kl-amt').value); 
+    let txn = createTxnObj('out', 'Locked in Keeper', amt, 'Success', 'fa-lock', 'orange', 'Self Vault', 'N/A');
+    await apiCall('EXECUTE_TXN', { mode: 'KEEPER_LOCK', sender: currentUser?.phone, amount: amt, txn });
+    playSound('debit'); currentBalance -= amt; keeperBalance += amt; updateUI(); document.getElementById('kl-amt').value = ''; showToast(`₹${amt} safely locked!`);
+}
+
+async function processKeeperWithdraw() {
+    let amt = parseFloat(document.getElementById('kw-amt').value); 
+    let txn = createTxnObj('in', 'Withdrawn from Keeper', amt, 'Success', 'fa-unlock', 'green', 'Self Vault', 'N/A');
+    await apiCall('EXECUTE_TXN', { mode: 'KEEPER_WITHDRAW', sender: currentUser?.phone, amount: Number(amt), txn });
+    playSound('credit'); keeperBalance -= amt; currentBalance += amt; updateUI(); document.getElementById('kw-amt').value = ''; showToast(`₹${amt} moved to Wallet!`);
+}
+
 // ----------------------------------------------------
 // FULL SCREEN SCANNER INTEGRATION
 // ----------------------------------------------------
@@ -552,9 +611,6 @@ function handleScanResult(text) {
     if(numInput) { numInput.value = text; numInput.dispatchEvent(new Event('input')); }
 }
 
-// ----------------------------------------------------
-// FIXED: SIDEBAR QR GENERATOR
-// ----------------------------------------------------
 function generateSidebarQR() {
     if (!currentUser) return;
     const qrContainer = document.getElementById("sidebar-qr-code");
@@ -562,15 +618,11 @@ function generateSidebarQR() {
     qrContainer.innerHTML = ""; 
     let qrValue = currentUser.customId || currentUser.phone;
     
-    // Delayed to ensure DOM is ready to take dimensions
     setTimeout(() => {
         try {
             new QRCode(qrContainer, {
-                text: qrValue,
-                width: 130,
-                height: 130,
-                colorDark : "#ef4444", 
-                colorLight : "#ffffff",
+                text: qrValue, width: 130, height: 130,
+                colorDark : "#ef4444", colorLight : "#ffffff",
                 correctLevel : QRCode.CorrectLevel.H
             });
         } catch(err) { console.log("QR Generate Wait..."); }
@@ -595,17 +647,14 @@ function updateProfileDashboardUI() {
     if (pLblPhonePill) pLblPhonePill.innerText = currentUser.phone;
     if (pLblEmail) pLblEmail.innerText = currentUser.email || 'Not Provided';
     if (pLblPin) pLblPin.innerText = currentUser.pin || "****";
-    
     if (pJoined) {
         let joinedText = currentUser.timestamp ? new Date(currentUser.timestamp).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }) : 'Verified Member';
         pJoined.innerText = joinedText;
     }
-
     if (pLblTg) {
         if (currentUser.tgUserId) { pLblTg.innerText = currentUser.tgUserId; pLblTg.className = "font-bold text-xs text-blue-400 font-mono"; } 
         else { pLblTg.innerText = "Not Linked"; pLblTg.className = "font-medium text-xs text-gray-400 italic"; }
     }
-
     if (currentUser.dp) {
         if (pImg) { pImg.src = currentUser.dp; pImg.classList.remove('hidden'); }
         if (pInitial) pInitial.classList.add('hidden');
@@ -640,6 +689,40 @@ async function processLocalDpUpload(event) {
     reader.readAsDataURL(file);
 }
 
+function handleScreenshotUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) return showToast("Image size must be less than 2MB");
+    showToast("Processing screenshot...");
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        const img = new Image();
+        img.onload = function () {
+            const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+            const maxDim = 320; let width = img.width; let height = img.height;
+            if (width > height) { if (width > maxDim) { height *= maxDim / width; width = maxDim; } } 
+            else { if (height > maxDim) { width *= maxDim / height; height = maxDim; } }
+            canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height);
+            uploadedScreenshotBase64 = canvas.toDataURL('image/jpeg', 0.6);
+            
+            const btn = document.getElementById('btn-upload-screenshot');
+            if (btn) {
+                btn.innerHTML = `<i class="fas fa-check-circle text-lg"></i> Screenshot Attached`;
+                btn.className = "w-full mb-6 py-4 px-4 rounded-xl text-xs font-black tracking-widest uppercase border-2 border-dashed border-green-500/50 text-green-400 bg-green-500/5 transition-colors flex items-center justify-center gap-2";
+            }
+            const previewContainer = document.getElementById('screenshot-preview-container');
+            const previewImg = document.getElementById('screenshot-preview-img');
+            if (previewContainer && previewImg) {
+                previewImg.src = uploadedScreenshotBase64;
+                previewContainer.classList.remove('hidden');
+            }
+            showToast("Screenshot successfully uploaded!");
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
 function initApp() {
     if(currentUser) {
         document.getElementById('sidebar-name').innerText = currentUser.name; 
@@ -648,10 +731,7 @@ function initApp() {
         let sidebarInitial = document.getElementById('sidebar-initial');
         if(currentUser.dp && sidebarDp) {
             sidebarDp.src = currentUser.dp; sidebarDp.classList.remove('hidden'); sidebarInitial.classList.add('hidden');
-        } else if(sidebarInitial) {
-            sidebarInitial.innerText = currentUser.name.charAt(0).toUpperCase();
-        }
-        
+        } else if(sidebarInitial) { sidebarInitial.innerText = currentUser.name.charAt(0).toUpperCase(); }
         generateSidebarQR();
     }
     updateApiKeyUI();
@@ -668,82 +748,8 @@ function initApp() {
     }
 }
 
-// ... Lifafa & Gift & Keeper Process functions
-async function processLifafaCreate() {
-    let type = document.getElementById('lif-type').value;
-    let users = parseInt(document.getElementById('lif-users').value); 
-    let amountPerUser = 0, minAmount = 0, maxAmount = 0;
-    if(type === 'standard' || type === 'coin') { amountPerUser = parseFloat(document.getElementById('lif-amt').value); } 
-    else { minAmount = parseFloat(document.getElementById('lif-min-amt').value); maxAmount = parseFloat(document.getElementById('lif-max-amt').value); }
-    
-    let referActive = document.getElementById('lif-refer-toggle') && document.getElementById('lif-refer-toggle').checked;
-    let referAmount = referActive ? parseFloat(document.getElementById('lif-refer-amt').value) : 0;
-    let password = document.getElementById('lif-password').value.trim();
-    
-    let channelInputs = document.querySelectorAll('.lif-channel-input');
-    let channels = []; channelInputs.forEach(input => { if(input.value.trim()) channels.push(input.value.trim()); });
-    
-    let maxBaseDeduction = type === 'standard' ? amountPerUser * users : (type === 'coin' ? (amountPerUser * 2) * users : maxAmount * users);
-    let totalDeduction = maxBaseDeduction + (referActive ? (referAmount * users) : 0);
-    
-    let txn = createTxnObj('out', `Lifafa Created`, totalDeduction, `Success`, 'fa-envelope-open-text', 'yellow', 'Lifafa System', 'N/A');
-    try {
-        let lifafaId = await apiCall('CREATE_LIFAFA', { phone: currentUser?.phone, type: type, amountPerUser: amountPerUser, minAmount: minAmount, maxAmount: maxAmount, totalUsers: users, password: password, channels: channels, referActive: referActive, referAmount: referAmount, totalDeduction: totalDeduction, txn });
-        playSound('debit'); currentBalance -= totalDeduction; updateUI(); 
-        document.getElementById('lifafa-create-form-wrapper').classList.add('hidden');
-        document.getElementById('lifafa-result-link').value = `https://${window.location.host}/?lifafa=${lifafaId}`;
-        document.getElementById('lifafa-success-box').classList.remove('hidden');
-    } catch(e) { showActionError({ amount: totalDeduction, name: "Lifafa", message: e.message || "Failed to create Lifafa." }); }
-}
-
-async function processGiftCreate() {
-    let amt = parseFloat(document.getElementById('gift-amt').value); 
-    let users = parseInt(document.getElementById('gift-users').value); 
-    let total = amt * users;
-    let code = Math.random().toString(36).substring(2, 7).toUpperCase();
-    let txn = createTxnObj('out', `Gift Code Created`, total, `Code: ${code}`, 'fa-gift', 'pink', 'Gift System', 'N/A');
-    try {
-        await apiCall('CREATE_GIFT', { phone: currentUser?.phone, code, amount: amt, users, txn });
-        playSound('debit'); sendTelegramMsg(currentUser?.tgUserId, formatTgMsg('out', 'Gift Code Generated', total, `Code: <b>${code}</b>`)); 
-        currentBalance -= total; updateUI(); 
-        document.getElementById('gift-amt').value=''; document.getElementById('gift-users').value=''; 
-        showActionSuccess({ type: 'gift', name: "Gift Code Active", detail: `Code: ${code} (${users} Users)`, amount: total, txnId: txn.id });
-    } catch(e) { showActionError({ amount: total, name: "Gift Code", message: e.message || "Gift creation failed." }); }
-}
-
-async function processGiftClaim() {
-    let code = document.getElementById('claim-code').value.toUpperCase(); 
-    if(code.length !== 5) return showActionError({ amount: 0, name: "Gift Claim", message: "Invalid Code format. Must be 5 digits."});
-    try {
-        let txn = createTxnObj('in', `Claimed Gift Code`, 0, `Code: ${code}`, 'fa-gift', 'green', 'Gift Code', 'N/A'); 
-        let reward = await apiCall('CLAIM_GIFT', { phone: currentUser?.phone, code, txn });
-        playSound('credit'); sendTelegramMsg(currentUser?.tgUserId, formatTgMsg('in', 'Gift Claimed', reward, `Code: <b>${code}</b>`)); 
-        document.getElementById('claim-code').value = ''; currentBalance += reward; updateUI(); 
-        showActionSuccess({ type: 'gift-claim', name: "Gift Code Redeemed", detail: `Code: ${code}`, amount: reward, txnId: txn.id });
-    } catch(e) { showActionError({ amount: 0, name: "Gift Claim", message: e.message || "Invalid code or already claimed." }); }
-}
-
-async function processKeeperLock() {
-    let amt = parseFloat(document.getElementById('kl-amt').value); 
-    let txn = createTxnObj('out', 'Locked in Keeper', amt, 'Success', 'fa-lock', 'orange', 'Self Vault', 'N/A');
-    await apiCall('EXECUTE_TXN', { mode: 'KEEPER_LOCK', sender: currentUser?.phone, amount: amt, txn });
-    playSound('debit'); currentBalance -= amt; keeperBalance += amt; updateUI(); document.getElementById('kl-amt').value = ''; showToast(`₹${amt} safely locked!`);
-}
-
-async function processKeeperWithdraw() {
-    let amt = parseFloat(document.getElementById('kw-amt').value); 
-    let txn = createTxnObj('in', 'Withdrawn from Keeper', amt, 'Success', 'fa-unlock', 'green', 'Self Vault', 'N/A');
-    await apiCall('EXECUTE_TXN', { mode: 'KEEPER_WITHDRAW', sender: currentUser?.phone, amount: Number(amt), txn });
-    playSound('credit'); keeperBalance -= amt; currentBalance += amt; updateUI(); document.getElementById('kw-amt').value = ''; showToast(`₹${amt} moved to Wallet!`);
-}
-
-let lastRenderedBalance = null;
-let lastRenderedKeeper = null;
-let lastTxnSignature = "";
-
 let deleteHistoryTapCount = 0;
 let deleteHistoryTimer;
-
 function handleSecretDeleteHistoryTap() {
     deleteHistoryTapCount++;
     clearTimeout(deleteHistoryTimer);
@@ -780,7 +786,10 @@ function updateStatsDashboard() {
     let hRate = document.getElementById('home-stats-rate'); if(hRate) hRate.innerText = successRate;
 }
 
-// --- FIXED: TRANSACTIONS LIST RENDERING ---
+let lastRenderedBalance = null;
+let lastRenderedKeeper = null;
+let lastTxnSignature = "";
+
 function updateUI() {
     if (currentBalance !== lastRenderedBalance) {
         document.querySelectorAll('.global-balance').forEach(el => el.innerText = currentBalance.toFixed(2));
@@ -906,7 +915,7 @@ function toggleSidebar() {
         sidebar.classList.remove('-translate-x-full'); 
         overlay.classList.remove('hidden'); 
         setTimeout(()=>overlay.classList.add('opacity-100'),10); 
-        generateSidebarQR(); // Ensure QR renders on opening
+        generateSidebarQR(); 
     } else { 
         sidebar.classList.add('-translate-x-full'); 
         overlay.classList.remove('opacity-100'); 
@@ -931,7 +940,7 @@ function searchTxn() {
     const listEl = document.getElementById('full-txn-list');
     
     if(!tid) {
-        lastTxnSignature = ""; // force re-render
+        lastTxnSignature = ""; 
         updateUI(); 
         return;
     }
@@ -952,6 +961,4 @@ function searchTxn() {
     }
 }
 
-window.onload = async () => {
-    await checkAuth();
-};
+window.onload = async () => { await checkAuth(); };
