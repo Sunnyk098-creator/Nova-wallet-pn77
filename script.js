@@ -1,5 +1,4 @@
 const API_URL = '/api/backend';
-const BOT_TOKEN = "8824808158:AAFUrAVMDqxR9JzdXLb4J80vwSgGldNgaq8";
 
 let currentUser = null, pendingSignupUser = null, pendingOTP = null, otpMode = 'signup', resetPinPhone = null;
 let globalSettings = {}, knownTxnStatuses = {}, transactions = [];
@@ -61,12 +60,16 @@ async function apiCall(action, data = {}) {
     }
 }
 
+// ----------------------------------------------------
+// SECURE TELEGRAM MESSAGING VIA BACKEND
+// ----------------------------------------------------
 async function sendTelegramMsg(chatId, text, isTxnAlert = true) {
     try {
         if(!chatId) return false;
         if (isTxnAlert && currentUser && currentUser.botAlerts === false) { return true; }
-        let res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: chatId, text: text, parse_mode: 'HTML' }) }); 
-        return (await res.json()).ok;
+        // Sending request to backend instead of Telegram directly
+        await apiCall('SEND_TG_MSG', { chatId: chatId, text: text }); 
+        return true;
     } catch (e) { return false; }
 }
 
