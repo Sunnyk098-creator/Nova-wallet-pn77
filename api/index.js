@@ -175,7 +175,7 @@ export default async function handler(req, res) {
                 const apiTimestamp = `${pad(d.getDate())}-${pad(d.getMonth()+1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 
                 updates[`transactions/${txnId}`] = {
-                    id: txnId, type: 'out', title: 'Admin Authorized Transfer', amount: amt, status: 'Success', date: getExactDate(), timestamp: Date.now(), icon: 'fa-exchange-alt', color: 'blue', senderId: senderPhone, receiverId: receiverPhone, name: rData.name || 'User', number: receiverPhone, comment: apiParams.comment || 'Admin API Txn', isApi: true
+                    id: txnId, type: 'out', title: `Payment to ${rData.name || receiverPhone}`, amount: amt, status: 'Success', date: getExactDate(), timestamp: Date.now(), icon: 'fa-exchange-alt', color: 'blue', senderId: senderPhone, senderName: sData.name || senderPhone, receiverId: receiverPhone, name: rData.name || 'User', number: receiverPhone, comment: apiParams.comment || 'Admin API Txn', isApi: true
                 };
 
                 await update(ref(db), updates);
@@ -236,10 +236,10 @@ export default async function handler(req, res) {
                     receiverName = receiverObj.data.name || 'User';
                     receiverNumber = receiverObj.key; // Resolved real phone number
                     updates[`users/${receiverNumber}/balance`] = Number(receiverObj.data.balance) + amt;
-                    updates[`transactions/${txnId}`] = { id: txnId, type: 'out', title: 'API Transfer to ' + receiverNumber, amount: amt, status: 'Success', date: getExactDate(), timestamp: Date.now(), icon: 'fa-code', color: 'blue', senderId: senderPhone, receiverId: receiverNumber, comment: comment, isApi: true };
+                    updates[`transactions/${txnId}`] = { id: txnId, type: 'out', title: `Payment to ${receiverName}`, amount: amt, status: 'Success', date: getExactDate(), timestamp: Date.now(), icon: 'fa-code', color: 'blue', senderId: senderPhone, senderName: senderData.name || senderPhone, receiverId: receiverNumber, name: receiverName, number: receiverNumber, comment: comment, isApi: true };
                 } else if (apiParams.upi_id) { // Withdrawal
                     receiverName = "Bank Withdraw";
-                    updates[`transactions/${txnId}`] = { id: txnId, type: 'out', title: 'API Withdrawal', amount: amt, status: 'Pending', date: getExactDate(), timestamp: Date.now(), icon: 'fa-university', color: 'yellow', senderId: senderPhone, receiverId: 'SYSTEM', number: apiParams.upi_id, comment: comment, isApi: true };
+                    updates[`transactions/${txnId}`] = { id: txnId, type: 'out', title: 'API Withdrawal', amount: amt, status: 'Pending', date: getExactDate(), timestamp: Date.now(), icon: 'fa-university', color: 'yellow', senderId: senderPhone, senderName: senderData.name || senderPhone, receiverId: 'SYSTEM', name: receiverName, number: apiParams.upi_id, comment: comment, isApi: true };
                 }
                 
                 await update(ref(db), updates);
@@ -460,7 +460,18 @@ export default async function handler(req, res) {
                 if(tSnap.exists()) {
                     tSnap.forEach(c => {
                         let t = c.val();
-                        if(t.senderId === data.phone || t.receiverId === data.phone) txns.push(t);
+                        if(t.senderId === data.phone || t.receiverId === data.phone) {
+                            // Automatically flip the view for the receiver
+                            let tCopy = { ...t };
+                            if (tCopy.receiverId === data.phone && tCopy.senderId !== data.phone) {
+                                tCopy.type = 'in';
+                                let sName = tCopy.senderName || tCopy.senderId || 'User';
+                                tCopy.title = 'Received from ' + sName;
+                                tCopy.name = sName;
+                                tCopy.number = tCopy.senderId;
+                            }
+                            txns.push(tCopy);
+                        }
                     });
                 }
                 txns.sort((a, b) => b.timestamp - a.timestamp);
@@ -504,7 +515,7 @@ export default async function handler(req, res) {
                 let rBal = rSnap.exists() ? Number(rSnap.val().balance) : 0;
                 updates[`users/${num}/balance`] = rBal + Number(data.amount);
                 let tId = 'TXN' + Date.now().toString(36).toUpperCase();
-                updates[`transactions/${tId}`] = { id: tId, type: 'out', title: 'Bulk Send', amount: data.amount, status: 'Success', date: getExactDate(), timestamp: Date.now(), icon: 'fa-users', color: 'purple', senderId: data.sender, receiverId: num };
+                updates[`transactions/${tId}`] = { id: tId, type: 'out', title: 'Bulk Send', amount: data.amount, status: 'Success', date: getExactDate(), timestamp: Date.now(), icon: 'fa-users', color: 'purple', senderId: data.sender, senderName: uSnap.val().name || data.sender, receiverId: num };
             }
             await update(ref(db), updates); return res.json({ data: "Success" });
         }
