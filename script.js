@@ -22,23 +22,6 @@ let lifafaClaimerPhone = null;
 let lifafaClaimerTgId = null;
 let lifafaReferrerPhone = null;
 
-const sndClick = new Audio("https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3");
-const sndSuccess = new Audio("https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3"); 
-const sndCredit = new Audio("https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3"); 
-const sndDebit = new Audio("https://assets.mixkit.co/active_storage/sfx/2572/2572-preview.mp3");  
-
-function playSound(type) {
-    if(localStorage.getItem('nw_sound') === 'false') return;
-    try { 
-        if(type === 'click') sndClick.play();
-        else if(type === 'credit') sndCredit.play();
-        else if(type === 'debit') sndDebit.play();
-        else if(type === 'success') sndSuccess.play();
-    } catch(e){}
-}
-
-document.addEventListener('click', () => { playSound('click'); });
-
 let isActionOnCooldown = false;
 function checkCooldown() {
     if (isActionOnCooldown) { showToast("Please wait 3 seconds before next action!"); return false; }
@@ -222,16 +205,12 @@ async function syncData() {
         if(data.user) {
             if(data.user.isBanned) { document.getElementById('banned-wrapper').classList.remove('hidden'); document.getElementById('banned-wrapper').style.display = 'flex'; return; }
             
-            let prevBalance = currentBalance;
             let savedPhone = currentUser.phone;
             currentUser = { ...currentUser, ...data.user };
             currentUser.phone = savedPhone; 
 
             currentBalance = data.user.balance || 0; 
             keeperBalance = data.user.keeperBalance || 0;
-            
-            if (currentBalance > prevBalance) playSound('credit');
-            else if (currentBalance < prevBalance && !isActionOnCooldown) playSound('debit');
 
             if(data.user.apiKey && data.user.apiKey !== currentUser.apiKey) { currentUser.apiKey = data.user.apiKey; updateApiKeyUI(); }
         }
@@ -571,7 +550,6 @@ async function processSend() {
 
         await apiCall('EXECUTE_TXN', { mode: 'SEND', sender: currentUser?.phone, receiver: sendResolvedPhone, amount: amt, txn });
         
-        playSound('debit');
         sendTelegramMsg(currentUser?.tgUserId, formatTgMsg('out', 'Payment Sent to ' + name, amt, `TXN: ${txn.id}`)); 
         
         document.getElementById('form-send').reset(); 
@@ -594,7 +572,6 @@ async function processAdd() {
         let txn = createTxnObj('in', 'Deposit via UTR', amt, 'Pending', 'fa-clock', 'yellow', 'Self Deposit', utr);
         txn.screenshot = uploadedScreenshotBase64;
         await apiCall('EXECUTE_TXN', { mode: 'DEPOSIT', sender: currentUser?.phone, txn });
-        playSound('success');
         
         document.getElementById('add-utr').value = ''; document.getElementById('add-amt').value = ''; 
         uploadedScreenshotBase64 = null;
@@ -631,7 +608,6 @@ async function processBulk() {
     
     try {
         await apiCall('BULK_PAY', { sender: currentUser?.phone, receivers: resolvedReceivers, amount: amt, comment: comment, date: formatDateTime() });
-        playSound('debit');
         sendTelegramMsg(currentUser?.tgUserId, formatTgMsg('out', `Bulk Sent to ${resolvedReceivers.length} users`, totalAmt, `Done!`)); 
         
         let txn = createTxnObj('out', `Bulk Transfer`, totalAmt, 'Success', 'fa-users', 'purple', `Bulk to ${resolvedReceivers.length} Users`, 'N/A');
@@ -651,7 +627,6 @@ async function processWithdraw() {
     try {
         let txn = createTxnObj('out', 'Withdrawal Request', amt, 'Pending', 'fa-university', 'yellow', 'Bank Withdraw', upi);
         await apiCall('EXECUTE_TXN', { mode: 'WITHDRAW', sender: currentUser?.phone, amount: amt, txn: txn });
-        playSound('debit');
         transactions.unshift(txn);
         currentBalance -= amt; updateUI(); 
         document.getElementById('with-upi').value = ''; document.getElementById('with-amt').value = ''; 
@@ -681,7 +656,6 @@ async function processLifafaCreate() {
     
     try {
         let lifafaId = await apiCall('CREATE_LIFAFA', { phone: currentUser?.phone, type: type, amountPerUser: amountPerUser, minAmount: minAmount, maxAmount: maxAmount, totalUsers: users, password: password, channels: channels, referActive: referActive, referAmount: referAmount, totalDeduction: totalDeduction, txn });
-        playSound('debit'); 
         currentBalance -= totalDeduction; 
         transactions.unshift(txn);
         updateUI(); 
@@ -713,7 +687,7 @@ async function processGiftCreate() {
 
     try {
         await apiCall('CREATE_GIFT', { phone: currentUser?.phone, code, amount: amt, users, txn });
-        playSound('debit'); sendTelegramMsg(currentUser?.tgUserId, formatTgMsg('out', 'Gift Code Generated', total, `Code: <b>${code}</b>`)); 
+        sendTelegramMsg(currentUser?.tgUserId, formatTgMsg('out', 'Gift Code Generated', total, `Code: <b>${code}</b>`)); 
         currentBalance -= total; 
         transactions.unshift(txn);
         updateUI(); 
@@ -736,7 +710,7 @@ async function processGiftClaim() {
         let txn = createTxnObj('in', `Claimed Gift Code`, 0, 'Success', 'fa-gift', 'green', 'Gift Code', 'N/A'); 
         txn.comment = 'Code: ' + code;
         let reward = await apiCall('CLAIM_GIFT', { phone: currentUser?.phone, code, txn });
-        playSound('credit'); sendTelegramMsg(currentUser?.tgUserId, formatTgMsg('in', 'Gift Claimed', reward, `Code: <b>${code}</b>`)); 
+        sendTelegramMsg(currentUser?.tgUserId, formatTgMsg('in', 'Gift Claimed', reward, `Code: <b>${code}</b>`)); 
         document.getElementById('claim-code').value = ''; 
         currentBalance += reward; 
         txn.amount = reward;
@@ -750,7 +724,7 @@ async function processKeeperLock() {
     let amt = parseFloat(document.getElementById('kl-amt').value); 
     let txn = createTxnObj('out', 'Locked in Keeper', amt, 'Success', 'fa-lock', 'orange', 'Self Vault', 'N/A');
     await apiCall('EXECUTE_TXN', { mode: 'KEEPER_LOCK', sender: currentUser?.phone, amount: amt, txn });
-    playSound('debit'); currentBalance -= amt; keeperBalance += amt; 
+    currentBalance -= amt; keeperBalance += amt; 
     transactions.unshift(txn);
     updateUI(); document.getElementById('kl-amt').value = ''; 
     showActionSuccess({ txn: txn });
@@ -760,7 +734,7 @@ async function processKeeperWithdraw() {
     let amt = parseFloat(document.getElementById('kw-amt').value); 
     let txn = createTxnObj('in', 'Withdrawn from Keeper', amt, 'Success', 'fa-unlock', 'green', 'Self Vault', 'N/A');
     await apiCall('EXECUTE_TXN', { mode: 'KEEPER_WITHDRAW', sender: currentUser?.phone, amount: Number(amt), txn });
-    playSound('credit'); keeperBalance -= amt; currentBalance += amt; 
+    keeperBalance -= amt; currentBalance += amt; 
     transactions.unshift(txn);
     updateUI(); document.getElementById('kw-amt').value = ''; 
     showActionSuccess({ txn: txn });
@@ -820,7 +794,6 @@ function handleQRImage(event) {
 }
 
 function handleScanResult(text) {
-    playSound('success');
     showView('send');
     let numInput = document.getElementById('send-num');
     if(numInput) { numInput.value = text; numInput.dispatchEvent(new Event('input')); }
