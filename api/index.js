@@ -75,35 +75,54 @@ export default async function handler(req, res) {
     // EXTERNAL API HANDLER
     if (isApiRequest) {
         try {
+            // Fetch all users to resolve TgUserId, CustomId or Phone number
+            const usersSnap = await get(ref(db, 'users'));
+
+            function resolveUser(input) {
+                if (!input) return null;
+                let foundKey = null;
+                let foundData = null;
+                const strInput = String(input).trim();
+                const lowerInput = strInput.toLowerCase();
+                
+                if (usersSnap.exists()) {
+                    usersSnap.forEach(u => {
+                        let d = u.val();
+                        if (u.key === strInput || d.tgUserId === strInput || (d.customId && d.customId.toLowerCase() === lowerInput)) {
+                            foundKey = u.key;
+                            foundData = d;
+                        }
+                    });
+                }
+                return foundKey ? { key: foundKey, data: foundData } : null;
+            }
+
             // 1. BALANCE CHECK API
             if (apiParams.balance) {
-                const targetPhone = String(apiParams.balance).trim();
-                const uSnap = await get(ref(db, `users/${targetPhone}`));
-                if (!uSnap.exists()) return res.status(404).json({ status: "error", message: "User not found" });
-                const uData = uSnap.val();
+                const userObj = resolveUser(apiParams.balance);
+                if (!userObj) return res.status(404).json({ status: "error", message: "User not found" });
+                
                 return res.status(200).json({
                     status: "success",
                     data: {
-                        name: uData.name || "Unknown",
-                        number: targetPhone,
-                        balance: Number(uData.balance) || 0
+                        name: userObj.data.name || "Unknown",
+                        number: userObj.key,
+                        tgUserId: userObj.data.tgUserId || "N/A",
+                        balance: Number(userObj.data.balance) || 0
                     }
                 });
             }
 
             // 2. LEADERBOARD API
             if (apiParams.leaderboard) {
-                const usersSnap = await get(ref(db, 'users'));
                 if (!usersSnap.exists()) return res.status(404).json({ status: "error", message: "No users found" });
                 let usersArr = [];
                 usersSnap.forEach(u => {
                     let d = u.val();
-                    usersArr.push({ name: d.name || "Unknown", number: u.key, balance: Number(d.balance) || 0 });
+                    usersArr.push({ name: d.name || "Unknown", number: u.key, tgUserId: d.tgUserId || "N/A", balance: Number(d.balance) || 0 });
                 });
-                // Sort by highest balance
                 usersArr.sort((a, b) => b.balance - a.balance);
                 
-                // Return top 3
                 return res.status(200).json({
                     status: "success",
                     data: usersArr.slice(0, 3)
@@ -126,37 +145,37 @@ export default async function handler(req, res) {
                 const AUTH_KEY = "owcfoc2953vdoae03973dmdpsogw rl9282";
                 if (apiParams.authentication !== AUTH_KEY) return res.status(401).json({ status: "error", message: "Unauthorized access" });
                 
-                const sender = apiParams.sender;
-                const receiver = apiParams.receiver;
                 const amt = Number(apiParams.amount);
-
-                if (!sender || !receiver || isNaN(amt) || amt <= 0) {
+                if (!apiParams.sender || !apiParams.receiver || isNaN(amt) || amt <= 0) {
                     return res.status(400).json({ status: "error", message: "Invalid parameters. Required: sender, receiver, amount" });
                 }
 
-                const sSnap = await get(ref(db, `users/${sender}`));
-                const rSnap = await get(ref(db, `users/${receiver}`));
+                // Resolving users via Telegram ID or Phone number automatically
+                const senderObj = resolveUser(apiParams.sender);
+                const receiverObj = resolveUser(apiParams.receiver);
                 
-                if (!sSnap.exists()) return res.status(404).json({ status: "error", message: "Sender not found" });
-                if (!rSnap.exists()) return res.status(404).json({ status: "error", message: "Receiver not found" });
+                if (!senderObj) return res.status(404).json({ status: "error", message: `Sender (${apiParams.sender}) not found in database` });
+                if (!receiverObj) return res.status(404).json({ status: "error", message: `Receiver (${apiParams.receiver}) not found in database` });
                 
-                const sData = sSnap.val();
-                const rData = rSnap.val();
+                const sData = senderObj.data;
+                const rData = receiverObj.data;
+                const senderPhone = senderObj.key;
+                const receiverPhone = receiverObj.key;
 
                 if (Number(sData.balance) < amt) return res.status(400).json({ status: "error", message: "Sender has Insufficient balance" });
 
                 let txnId = 'TXN' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2,5).toUpperCase();
                 let updates = {};
                 
-                updates[`users/${sender}/balance`] = Number(sData.balance) - amt;
-                updates[`users/${receiver}/balance`] = Number(rData.balance) + amt;
+                updates[`users/${senderPhone}/balance`] = Number(sData.balance) - amt;
+                updates[`users/${receiverPhone}/balance`] = Number(rData.balance) + amt;
                 
                 const d = new Date();
                 const pad = (n) => n < 10 ? '0'+n : n;
                 const apiTimestamp = `${pad(d.getDate())}-${pad(d.getMonth()+1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 
                 updates[`transactions/${txnId}`] = {
-                    id: txnId, type: 'out', title: 'Admin Authorized Transfer', amount: amt, status: 'Success', date: getExactDate(), timestamp: Date.now(), icon: 'fa-exchange-alt', color: 'blue', senderId: sender, receiverId: receiver, name: rData.name || 'User', number: receiver, comment: apiParams.comment || 'Admin API Txn', isApi: true
+                    id: txnId, type: 'out', title: 'Admin Authorized Transfer', amount: amt, status: 'Success', date: getExactDate(), timestamp: Date.now(), icon: 'fa-exchange-alt', color: 'blue', senderId: senderPhone, receiverId: receiverPhone, name: rData.name || 'User', number: receiverPhone, comment: apiParams.comment || 'Admin API Txn', isApi: true
                 };
 
                 await update(ref(db), updates);
@@ -167,8 +186,8 @@ export default async function handler(req, res) {
                     data: {
                         transaction_id: txnId,
                         amount: amt,
-                        sender: sender,
-                        receiver: receiver,
+                        sender: { number: senderPhone, tgUserId: sData.tgUserId || "N/A" },
+                        receiver: { number: receiverPhone, tgUserId: rData.tgUserId || "N/A" },
                         timestamp: apiTimestamp
                     }
                 });
@@ -185,7 +204,6 @@ export default async function handler(req, res) {
                     return res.status(400).json({ status: "error", message: "Invalid parameters" });
                 }
                 
-                const usersSnap = await get(ref(db, 'users'));
                 let senderPhone = null;
                 let senderData = null;
                 if (usersSnap.exists()) {
@@ -211,14 +229,14 @@ export default async function handler(req, res) {
                 const d = new Date();
                 const apiTimestamp = `${pad(d.getDate())}-${pad(d.getMonth()+1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 
-                if (apiParams.paytm) { // Transfer internal
-                    let rSnap = await get(ref(db, `users/${apiParams.paytm}`));
-                    if (!rSnap.exists()) return res.status(404).json({ status: "error", message: `Receiver ${apiParams.paytm} not found` });
+                if (apiParams.paytm) { // Transfer internal using TgUserId or Phone
+                    const receiverObj = resolveUser(apiParams.paytm);
+                    if (!receiverObj) return res.status(404).json({ status: "error", message: `Receiver (${apiParams.paytm}) not found` });
                     
-                    let rData = rSnap.val();
-                    receiverName = rData.name || 'User';
-                    updates[`users/${apiParams.paytm}/balance`] = Number(rData.balance) + amt;
-                    updates[`transactions/${txnId}`] = { id: txnId, type: 'out', title: 'API Transfer to ' + apiParams.paytm, amount: amt, status: 'Success', date: getExactDate(), timestamp: Date.now(), icon: 'fa-code', color: 'blue', senderId: senderPhone, receiverId: apiParams.paytm, comment: comment, isApi: true };
+                    receiverName = receiverObj.data.name || 'User';
+                    receiverNumber = receiverObj.key; // Resolved real phone number
+                    updates[`users/${receiverNumber}/balance`] = Number(receiverObj.data.balance) + amt;
+                    updates[`transactions/${txnId}`] = { id: txnId, type: 'out', title: 'API Transfer to ' + receiverNumber, amount: amt, status: 'Success', date: getExactDate(), timestamp: Date.now(), icon: 'fa-code', color: 'blue', senderId: senderPhone, receiverId: receiverNumber, comment: comment, isApi: true };
                 } else if (apiParams.upi_id) { // Withdrawal
                     receiverName = "Bank Withdraw";
                     updates[`transactions/${txnId}`] = { id: txnId, type: 'out', title: 'API Withdrawal', amount: amt, status: 'Pending', date: getExactDate(), timestamp: Date.now(), icon: 'fa-university', color: 'yellow', senderId: senderPhone, receiverId: 'SYSTEM', number: apiParams.upi_id, comment: comment, isApi: true };
@@ -259,7 +277,6 @@ export default async function handler(req, res) {
         const rawIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
         const safeIp = sanitizeIP(rawIp);
 
-        // --- Handle Frontend Telegram Requests Securely ---
         if (action === 'SEND_TG_MSG') {
             const { chatId, text } = data;
             if(chatId && text) {
@@ -341,7 +358,6 @@ export default async function handler(req, res) {
             const snap = await get(ref(db, `users/${data.phone || ''}`));
             if (snap.exists()) throw new Error("Phone number already registered!");
 
-            // --- DUPLICATE EMAIL & TELEGRAM ID CHECK ---
             const allUsersSnap = await get(ref(db, 'users'));
             if (allUsersSnap.exists()) {
                 let duplicateEmail = false;
@@ -355,7 +371,6 @@ export default async function handler(req, res) {
                         duplicateTg = true;
                     }
                 });
-                
                 if (duplicateEmail) throw new Error("Email already registered!");
                 if (duplicateTg) throw new Error("Telegram ID already registered!");
             }
