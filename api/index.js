@@ -234,6 +234,26 @@ export default async function handler(req, res) {
         if (action === 'REGISTER') {
             const snap = await get(ref(db, `users/${data.phone || ''}`));
             if (snap.exists()) throw new Error("Phone number already registered!");
+
+            // --- DUPLICATE EMAIL & TELEGRAM ID CHECK ---
+            const allUsersSnap = await get(ref(db, 'users'));
+            if (allUsersSnap.exists()) {
+                let duplicateEmail = false;
+                let duplicateTg = false;
+                allUsersSnap.forEach(child => {
+                    let u = child.val();
+                    if (data.userObj.email && u.email && u.email.toLowerCase() === data.userObj.email.toLowerCase()) {
+                        duplicateEmail = true;
+                    }
+                    if (data.userObj.tgUserId && u.tgUserId && u.tgUserId === data.userObj.tgUserId) {
+                        duplicateTg = true;
+                    }
+                });
+                
+                if (duplicateEmail) throw new Error("Email already registered!");
+                if (duplicateTg) throw new Error("Telegram ID already registered!");
+            }
+
             data.userObj.lastIp = safeIp;
             await set(ref(db, `users/${data.phone || ''}`), data.userObj);
             if (safeIp !== 'unknown') { await set(ref(db, `ips/${safeIp}`), data.phone || ''); }
@@ -476,7 +496,7 @@ export default async function handler(req, res) {
 
         return res.status(400).json({ error: "Unknown Action" });
     } catch (e) { 
-        if (e.message && e.message.includes("Insufficient") || e.message.includes("not found") || e.message.includes("Password") || e.message.includes("join channel") || e.message.includes("already claimed") || e.message.includes("Invalid Phone")) {
+        if (e.message && e.message.includes("Insufficient") || e.message.includes("not found") || e.message.includes("Password") || e.message.includes("join channel") || e.message.includes("already claimed") || e.message.includes("Invalid Phone") || e.message.includes("already registered")) {
             return res.json({ error: e.message });
         }
         return res.status(500).json({ error: "invalid" }); 
